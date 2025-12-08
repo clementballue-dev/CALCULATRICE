@@ -1,104 +1,148 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Choix du commerce</title>
+<meta charset="UTF-8">
+<title>France Commerce</title>
 
-  <style>
-    body {
-      display: flex;       /* sidebar et main côte à côte */
-      margin: 0;
-      font-family: Arial, sans-serif;
-      height: 100vh;       /* prend toute la hauteur de l’écran */
-    }
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  display: flex;
+  height: 100vh;
+}
 
-    /* Sidebar */
-    .sidebar {
-      width: 150px;        /* petite sidebar */
-      background-color: #f4f4f4;
-      padding: 20px;
-      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-      overflow-y: auto;
-    }
+.sidebar {
+  width: 280px;
+  background: #f4f4f4;
+  padding: 15px;
+  overflow-y: auto;
+  border-right: 2px solid #ddd;
+}
 
-    .sidebar h2 { margin-top: 0; }
+.sidebar h2 {
+  margin-top: 20px;
+  margin-bottom: 8px;
+}
 
-    .sidebar button {
-      display: block;
-      width: 100%;
-      margin: 5px 0;
-      padding: 10px;
-      background-color: #fff;
-      border: 1px solid #ccc;
-      cursor: pointer;
-      text-align: left;
-      transition: background-color 0.2s;
-    }
+.sidebar button {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 5px;
+  border: 1px solid #ccc;
+  background: white;
+  cursor: pointer;
+}
 
-    .sidebar button:hover { background-color: #ddd; }
+.sidebar button:hover {
+  background: #e0e0e0;
+}
 
-    .sidebar button.active {
-      background-color: #007bff;
-      color: #fff;
-      border-color: #007bff;
-    }
+.sidebar button.active {
+  background: #007bff;
+  color: white;
+}
 
-    /* Partie principale */
-    .main {
-      flex: 3;             /* plus grande que la sidebar */
-      padding: 20px;
-    }
-  </style>
+.main {
+  flex: 1;
+  padding: 40px;
+}
+
+.result {
+  font-size: 26px;
+  font-weight: bold;
+  margin-top: 40px;
+}
+</style>
 </head>
+
 <body>
 
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <h2>Régions</h2>
-    <button onclick="selectRegion('Normandie')" id="region-normandie">Normandie</button>
-    <button onclick="selectRegion('Provence')" id="region-provence">Provence</button>
-    <button onclick="selectRegion('Île-de-France')" id="region-iledefrance">Île-de-France</button>
+<div class="sidebar">
+  <h2>Régions</h2>
+  <div id="regions"></div>
 
-    <h2>Commerces</h2>
-    <button onclick="selectCommerce('Coiffeur')" id="commerce-coiffeur">Coiffeur</button>
-    <button onclick="selectCommerce('Restaurant')" id="commerce-restaurant">Restaurant</button>
-    <button onclick="selectCommerce('Boulanger')" id="commerce-boulanger">Boulanger</button>
-    <button onclick="selectCommerce('Pharmacie')" id="commerce-pharmacie">Pharmacie</button>
-    <button onclick="selectCommerce('Boucherie')" id="commerce-boucherie">Boucherie</button>
-    <button onclick="selectCommerce('Charcutier')" id="commerce-charcutier">Charcutier</button>
-  </div>
+  <h2>Commerces</h2>
+  <div id="commerces"></div>
+</div>
 
-  <!-- Grande partie principale -->
-  <div class="main">
-    <h1>Bienvenue sur mon site</h1>
-    <p>Sélectionnez un commerce dans la sidebar.</p>
-  </div>
+<div class="main">
+  <h1>France Commerce</h1>
+  <p>Clique sur une région et un commerce</p>
+  <div class="result" id="result">Aucune sélection</div>
+</div>
 
-  <!-- JavaScript pour les boutons -->
-  <script>
-    let currentRegion = '';
-    let currentCommerce = '';
+<script>
+const regions = [
+"Auvergne-Rhône-Alpes",
+"Bourgogne-Franche-Comté",
+"Bretagne",
+"Centre-Val de Loire",
+"Corse",
+"Grand Est",
+"Hauts-de-France",
+"Île-de-France",
+"Normandie",
+"Nouvelle-Aquitaine",
+"Occitanie",
+"Pays de la Loire",
+"Provence-Alpes-Côte d’Azur"
+];
 
-    function selectRegion(region) {
-      currentRegion = region;
-      document.querySelectorAll('.sidebar button[id^="region-"]').forEach(btn => btn.classList.remove('active'));
-      document.getElementById('region-' + region.toLowerCase().replace(/ /g,'')).classList.add('active');
-      updateSelection();
-    }
+const commerces = [
+"Coiffeur",
+"Restaurant",
+"Boulangerie",
+"Pharmacie",
+"Boucherie",
+"Charcutier",
+"Épicerie",
+"Supermarché",
+"Pizzeria",
+"Bar",
+"Café",
+"Tabac",
+"Fleuriste",
+"Vêtements",
+"Chaussures",
+"Opticien",
+"Bijouterie",
+"Garage",
+"Librairie"
+];
 
-    function selectCommerce(commerce) {
-      currentCommerce = commerce;
-      document.querySelectorAll('.sidebar button[id^="commerce-"]').forEach(btn => btn.classList.remove('active'));
-      document.getElementById('commerce-' + commerce.toLowerCase().replace(/ /g,'')).classList.add('active');
-      updateSelection();
-    }
+let regionChoisie = "";
+let commerceChoisi = "";
 
-    function updateSelection() {
-      const display = document.getElementById('selection');
-      if(!display) return; // la grande partie n’a pas besoin d’afficher le texte
-    }
-  </script>
+function updateResult() {
+  if (regionChoisie && commerceChoisi) {
+    document.getElementById("result").textContent =
+      commerceChoisi + " en " + regionChoisie;
+  }
+}
+
+function createButtons(list, containerId, type) {
+  const container = document.getElementById(containerId);
+  list.forEach(item => {
+    const btn = document.createElement("button");
+    btn.textContent = item;
+    btn.onclick = () => {
+      document.querySelectorAll("#" + containerId + " button")
+        .forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      if (type === "region") regionChoisie = item;
+      if (type === "commerce") commerceChoisi = item;
+
+      updateResult();
+    };
+    container.appendChild(btn);
+  });
+}
+
+createButtons(regions, "regions", "region");
+createButtons(commerces, "commerces", "commerce");
+</script>
 
 </body>
 </html>
