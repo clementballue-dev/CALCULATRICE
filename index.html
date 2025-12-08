@@ -1,155 +1,209 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Recherche de commerces</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Choix du commerce</title>
+  <style>
+    body {
+      display: flex;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      height: 100vh;
+    }
 
-<style>
-body{
-  margin:0;
-  font-family: Arial, sans-serif;
-  display:flex;
-  height:100vh;
-}
+    /* Sidebar */
+    .sidebar {
+      width: 200px;
+      background-color: #f4f4f4;
+      padding: 20px;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      overflow-y: auto;
+    }
 
-/* SIDEBAR */
-.sidebar{
-  width:220px;
-  background:#f4f4f4;
-  padding:15px;
-  overflow-y:auto;
-  border-right:1px solid #ccc;
-}
+    .sidebar h2 { margin-top: 0; }
 
-.sidebar h2{
-  margin-top:10px;
-  font-size:18px;
-}
+    .sidebar button {
+      display: block;
+      width: 100%;
+      margin: 5px 0;
+      padding: 10px;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      text-align: left;
+      transition: background-color 0.2s;
+    }
 
-.sidebar button{
-  width:100%;
-  padding:8px;
-  margin:4px 0;
-  border:1px solid #ccc;
-  background:white;
-  cursor:pointer;
-  text-align:left;
-}
+    .sidebar button:hover { background-color: #ddd; }
 
-.sidebar button.active{
-  background:#007bff;
-  color:white;
-}
+    .sidebar button.active {
+      background-color: #007bff;
+      color: #fff;
+      border-color: #007bff;
+    }
 
-/* MAIN */
-.main{
-  flex:1;
-  padding:20px;
-}
+    /* Main content */
+    .main {
+      flex: 3;
+      padding: 20px;
+      overflow-y: auto;
+    }
 
-#cards{
-  display:grid;
-  grid-template-columns:repeat(auto-fill, minmax(200px,1fr));
-  gap:15px;
-}
+    .cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
 
-.card{
-  background:white;
-  border:1px solid #ccc;
-  border-radius:8px;
-  padding:15px;
-  cursor:pointer;
-  transition:transform 0.2s;
-}
+    .card {
+      background-color: #fff;
+      border: 1px solid #ccc;
+      width: 200px;
+      padding: 15px;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
 
-.card:hover{
-  transform:scale(1.03);
-}
-</style>
+    .card img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      margin-bottom: 10px;
+    }
+
+    /* Fullscreen overlay */
+    #overlay {
+      position: fixed;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+
+    #overlay .overlay-content {
+      background: #fff;
+      padding: 20px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90%;
+      overflow-y: auto;
+      text-align: center;
+    }
+
+    #overlay .close {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      font-size: 30px;
+      color: #fff;
+      cursor: pointer;
+    }
+
+  </style>
 </head>
-
 <body>
 
-<div class="sidebar">
-  <h2>Régions</h2>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>Régions</h2>
+    <button onclick="selectRegion('Île-de-France')" id="region-iledefrance">Île-de-France</button>
+    <button onclick="selectRegion('Normandie')" id="region-normandie">Normandie</button>
+    <button onclick="selectRegion('Provence')" id="region-provence">Provence</button>
 
-  <button onclick="selectRegion(this,'Auvergne-Rhône-Alpes')">Auvergne-Rhône-Alpes</button>
-  <button onclick="selectRegion(this,'Bourgogne-Franche-Comté')">Bourgogne-Franche-Comté</button>
-  <button onclick="selectRegion(this,'Bretagne')">Bretagne</button>
-  <button onclick="selectRegion(this,'Centre-Val de Loire')">Centre-Val de Loire</button>
-  <button onclick="selectRegion(this,'Corse')">Corse</button>
-  <button onclick="selectRegion(this,'Grand Est')">Grand Est</button>
-  <button onclick="selectRegion(this,'Hauts-de-France')">Hauts-de-France</button>
-  <button onclick="selectRegion(this,'Île-de-France')">Île-de-France</button>
-  <button onclick="selectRegion(this,'Normandie')">Normandie</button>
-  <button onclick="selectRegion(this,'Nouvelle-Aquitaine')">Nouvelle-Aquitaine</button>
-  <button onclick="selectRegion(this,'Occitanie')">Occitanie</button>
-  <button onclick="selectRegion(this,'Pays de la Loire')">Pays de la Loire</button>
-  <button onclick="selectRegion(this,'Provence-Alpes-Côte d’Azur')">Provence-Alpes-Côte d’Azur</button>
+    <h2>Commerces</h2>
+    <button onclick="selectCommerce('Coiffeur')" id="commerce-coiffeur">Coiffeur</button>
+    <button onclick="selectCommerce('Restaurant')" id="commerce-restaurant">Restaurant</button>
+    <button onclick="selectCommerce('Boulanger')" id="commerce-boulanger">Boulanger</button>
+    <button onclick="selectCommerce('Pharmacie')" id="commerce-pharmacie">Pharmacie</button>
+    <button onclick="selectCommerce('Boucherie')" id="commerce-boucherie">Boucherie</button>
+    <button onclick="selectCommerce('Charcutier')" id="commerce-charcutier">Charcutier</button>
+  </div>
 
-  <h2>Commerces</h2>
+  <!-- Main content -->
+  <div class="main">
+    <h1>Choisissez un commerce</h1>
+    <div id="cardsContainer" class="cards">
+      <!-- Les cartes vont apparaître ici -->
+    </div>
+  </div>
 
-  <button onclick="selectCommerce(this,'Restaurant')">Restaurant</button>
-  <button onclick="selectCommerce(this,'Boulangerie')">Boulangerie</button>
-  <button onclick="selectCommerce(this,'Pâtisserie')">Pâtisserie</button>
-  <button onclick="selectCommerce(this,'Coiffeur')">Coiffeur</button>
-  <button onclick="selectCommerce(this,'Barbier')">Barbier</button>
-  <button onclick="selectCommerce(this,'Pharmacie')">Pharmacie</button>
-  <button onclick="selectCommerce(this,'Boucherie')">Boucherie</button>
-  <button onclick="selectCommerce(this,'Charcuterie')">Charcuterie</button>
-  <button onclick="selectCommerce(this,'Poissonnerie')">Poissonnerie</button>
-  <button onclick="selectCommerce(this,'Épicerie')">Épicerie</button>
-  <button onclick="selectCommerce(this,'Supermarché')">Supermarché</button>
-  <button onclick="selectCommerce(this,'Tabac/Presse')">Tabac / Presse</button>
-  <button onclick="selectCommerce(this,'Fleuriste')">Fleuriste</button>
-  <button onclick="selectCommerce(this,'Garage')">Garage</button>
-  <button onclick="selectCommerce(this,'Opticien')">Opticien</button>
-  <button onclick="selectCommerce(this,'Magasin de vêtements')">Magasin de vêtements</button>
-</div>
+  <!-- Overlay fullscreen -->
+  <div id="overlay">
+    <div class="close" onclick="closeOverlay()">&times;</div>
+    <div class="overlay-content" id="overlayContent"></div>
+  </div>
 
-<div class="main">
-  <h1>Résultats</h1>
-  <p>Sélectionnez une région et un commerce.</p>
-  <div id="cards"></div>
-</div>
+  <script>
+    const commerces = [
+      { region: 'Île-de-France', type:'Coiffeur', name:'La Coupe', address:'Paris', phone:'01 23 45 67 89', img:'https://via.placeholder.com/200x120?text=La+Coupe', note:5 },
+      { region: 'Île-de-France', type:'Coiffeur', name:'CF Coiffeurs', address:'Paris 17', phone:'01 23 45 67 90', img:'https://via.placeholder.com/200x120?text=CF+Coiffeurs', note:5 },
+      { region: 'Île-de-France', type:'Coiffeur', name:'Luz Coiffure', address:'Paris 15', phone:'01 23 45 67 91', img:'https://via.placeholder.com/200x120?text=Luz+Coiffure', note:5 },
+      { region: 'Île-de-France', type:'Coiffeur', name:'Naé', address:'Paris 17', phone:'01 23 45 67 92', img:'https://via.placeholder.com/200x120?text=Naé', note:5 },
+      { region: 'Île-de-France', type:'Coiffeur', name:'Abrias-Laforest', address:'Paris 16', phone:'01 23 45 67 93', img:'https://via.placeholder.com/200x120?text=Abrias-Laforest', note:5 },
+      { region: 'Île-de-France', type:'Coiffeur', name:'Francois Raphael', address:'Paris 15', phone:'01 23 45 67 94', img:'https://via.placeholder.com/200x120?text=Francois+Raphael', note:5 },
+      { region: 'Île-de-France', type:'Coiffeur', name:'Coiffure Masculine Olivier Plaisant', address:'Paris 11', phone:'01 23 45 67 95', img:'https://via.placeholder.com/200x120?text=Olivier+Plaisant', note:5 },
+      { region: 'Île-de-France', type:'Coiffeur', name:'Charlène Ramon', address:'Paris 4', phone:'01 23 45 67 96', img:'https://via.placeholder.com/200x120?text=Charlène+Ramon', note:5 },
+      { region: 'Île-de-France', type:'Coiffeur', name:'La Marac\'house Barber', address:'Paris 17', phone:'01 23 45 67 97', img:'https://via.placeholder.com/200x120?text=MaracHouse', note:5 },
+      { region: 'Île-de-France', type:'Coiffeur', name:'Bulle d\'Hair', address:'Maisons-Alfort', phone:'01 23 45 67 98', img:'https://via.placeholder.com/200x120?text=Bulle+dHair', note:5 },
+    ];
 
-<script>
-let selectedRegion = "";
-let selectedCommerce = "";
+    let selectedRegion = '';
+    let selectedCommerce = '';
 
-function selectRegion(btn, region){
-  selectedRegion = region;
-  document.querySelectorAll(".sidebar h2 + button, .sidebar button").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  updateResults();
-}
-
-function selectCommerce(btn, commerce){
-  selectedCommerce = commerce;
-  document.querySelectorAll(".sidebar button").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  updateResults();
-}
-
-function updateResults(){
-  const cards = document.getElementById("cards");
-  cards.innerHTML = "";
-
-  if(selectedRegion && selectedCommerce){
-    for(let i=1;i<=6;i++){
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = `
-        <h3>${selectedCommerce} ${i}</h3>
-        <p>${selectedRegion}</p>
-        <p>Adresse fictive</p>
-      `;
-      cards.appendChild(card);
+    function selectRegion(region){
+      selectedRegion = region;
+      document.querySelectorAll('.sidebar button[id^="region-"]').forEach(btn => btn.classList.remove('active'));
+      document.getElementById('region-' + region.toLowerCase().replace(/ /g,'')).classList.add('active');
+      updateCards();
     }
-  }
-}
-</script>
 
+    function selectCommerce(commerce){
+      selectedCommerce = commerce;
+      document.querySelectorAll('.sidebar button[id^="commerce-"]').forEach(btn => btn.classList.remove('active'));
+      document.getElementById('commerce-' + commerce.toLowerCase().replace(/ /g,'')).classList.add('active');
+      updateCards();
+    }
+
+    function updateCards(){
+      const container = document.getElementById('cardsContainer');
+      container.innerHTML = '';
+      if(selectedRegion && selectedCommerce){
+        const filtered = commerces.filter(c => c.region === selectedRegion && c.type === selectedCommerce);
+        filtered.forEach(c => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `<img src="${c.img}" alt="${c.name}"><h3>${c.name}</h3><p>${c.address}</p><p>${c.phone}</p>`;
+          card.onclick = ()=>showOverlay(c);
+          container.appendChild(card);
+        });
+      }
+    }
+
+    function showOverlay(commerce){
+      document.getElementById('overlayContent').innerHTML = `
+        <h2>${commerce.name}</h2>
+        <img src="${commerce.img}" style="width:100%; height:auto; margin-bottom:10px;">
+        <p>${commerce.address}</p>
+        <p>${commerce.phone}</p>
+        <p>Note: ${commerce.note}/5</p>
+      `;
+      document.getElementById('overlay').style.display = 'flex';
+    }
+
+    function closeOverlay(){
+      document.getElementById('overlay').style.display = 'none';
+    }
+
+  </script>
 </body>
 </html>
