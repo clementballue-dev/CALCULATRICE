@@ -151,7 +151,44 @@ main{
 </div>
 
 <script>
-let region="", commerce="";
+let region="", commerce="",
+<script>
+let selectedRegion = "";
+let selectedCommerce = "";
+
+function selectRegion(btn, region){
+  selectedRegion = region;
+  updateUI();
+}
+
+function selectCommerce(btn, commerce){
+  selectedCommerce = commerce;
+  updateUI();
+}
+
+function updateUI(){
+  const resultsArea = document.getElementById("cards");
+  resultsArea.innerHTML = "";
+
+  if(selectedRegion && selectedCommerce){
+    renderResults();
+  }
+}
+
+function renderResults(){
+  const resultsArea = document.getElementById("cards");
+
+  for(let i = 1; i <= 4; i++){
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <h3>${selectedCommerce} ${i}</h3>
+      <p>${selectedRegion}</p>
+    `;
+    resultsArea.appendChild(card);
+  }
+}
+</script>
 
 document.querySelectorAll(".region").forEach(b=>{
   b.onclick=()=>{
@@ -211,4 +248,3 @@ function closeFull(){
 </script>
 
 </body>
-</html>
