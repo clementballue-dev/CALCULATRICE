@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Annuaire Commerces</title>
+<title>Annuaire Commerces France</title>
 <style>
 body { display:flex; margin:0; font-family:Arial,sans-serif; min-height:100vh; }
-.sidebar { width:220px; background:#f4f4f4; padding:15px; box-shadow:2px 0 5px rgba(0,0,0,0.1); overflow-y:auto; }
+.sidebar { width:250px; background:#f4f4f4; padding:15px; box-shadow:2px 0 5px rgba(0,0,0,0.1); overflow-y:auto; }
 .sidebar h2 { margin:0 0 10px; }
 .sidebar button { width:100%; padding:8px; margin:5px 0; border:1px solid #aaa; background:#fff; cursor:pointer; text-align:left; }
 .sidebar button.active { background:#007bff; color:#fff; border-color:#007bff; }
@@ -25,8 +25,20 @@ body { display:flex; margin:0; font-family:Arial,sans-serif; min-height:100vh; }
 
 <div class="sidebar">
 <h2>Régions</h2>
+<button onclick="selectRegion('Auvergne-Rhône-Alpes')">Auvergne-Rhône-Alpes</button>
+<button onclick="selectRegion('Bourgogne-Franche-Comté')">Bourgogne-Franche-Comté</button>
+<button onclick="selectRegion('Bretagne')">Bretagne</button>
+<button onclick="selectRegion('Centre-Val de Loire')">Centre-Val de Loire</button>
+<button onclick="selectRegion('Corse')">Corse</button>
+<button onclick="selectRegion('Grand Est')">Grand Est</button>
+<button onclick="selectRegion('Hauts-de-France')">Hauts-de-France</button>
 <button onclick="selectRegion('Île-de-France')">Île-de-France</button>
 <button onclick="selectRegion('Normandie')">Normandie</button>
+<button onclick="selectRegion('Nouvelle-Aquitaine')">Nouvelle-Aquitaine</button>
+<button onclick="selectRegion('Occitanie')">Occitanie</button>
+<button onclick="selectRegion('Pays de la Loire')">Pays de la Loire</button>
+<button onclick="selectRegion('Provence-Alpes-Côte d’Azur')">Provence-Alpes-Côte d’Azur</button>
+
 <h2>Commerces</h2>
 <button onclick="selectCommerce('Coiffeur')">Coiffeur</button>
 <button onclick="selectCommerce('Restaurant')">Restaurant</button>
@@ -47,54 +59,56 @@ body { display:flex; margin:0; font-family:Arial,sans-serif; min-height:100vh; }
 </div>
 
 <script>
+// Toutes les données des commerces donnés précédemment
+
 const commerces = [
-  // Coiffeurs Île-de-France
+  // 10 Coiffeurs Île-de-France
   {region:'Île-de-France', type:'Coiffeur', name:'Naé', address:'83 Rue Cardinet, 75017 Paris', phone:'01 45 74 10 10', img:'https://via.placeholder.com/200x120?text=Naé'},
   {region:'Île-de-France', type:'Coiffeur', name:'CF Coiffeurs', address:'5 Rue Général Lanrezac, 75017 Paris', phone:'01 42 27 11 22', img:'https://via.placeholder.com/200x120?text=CF+Coiffeurs'},
   {region:'Île-de-France', type:'Coiffeur', name:'Luz Coiffure', address:'117 Rue Vaugirard, 75015 Paris', phone:'01 45 32 44 55', img:'https://via.placeholder.com/200x120?text=Luz+Coiffure'},
-  {region:'Île-de-France', type:'Coiffeur', name:'Abrias-Laforest', address:'8 Boulevard Delessert, 75016 Paris', phone:'01 45 20 30 40', img:'https://via.placeholder.com/200x120?text=Abrias-Laforest'},
-  {region:'Île-de-France', type:'Coiffeur', name:'Coiff&Co', address:'22 Rue de Rennes, 75006 Paris', phone:'01 44 41 32 21', img:'https://via.placeholder.com/200x120?text=Coiff%26Co'},
-  {region:'Île-de-France', type:'Coiffeur', name:'Hair Style', address:'14 Avenue Victor Hugo, 75016 Paris', phone:'01 40 50 60 70', img:'https://via.placeholder.com/200x120?text=Hair+Style'},
-  {region:'Île-de-France', type:'Coiffeur', name:'Salon Prestige', address:'30 Rue Saint-Dominique, 75007 Paris', phone:'01 48 50 30 20', img:'https://via.placeholder.com/200x120?text=Salon+Prestige'},
-  {region:'Île-de-France', type:'Coiffeur', name:'Urban Cut', address:'12 Rue Montmartre, 75002 Paris', phone:'01 42 60 70 80', img:'https://via.placeholder.com/200x120?text=Urban+Cut'},
-  {region:'Île-de-France', type:'Coiffeur', name:'Studio Coiffure', address:'7 Rue du Faubourg, 75011 Paris', phone:'01 47 00 20 30', img:'https://via.placeholder.com/200x120?text=Studio+Coiffure'},
-  {region:'Île-de-France', type:'Coiffeur', name:'Élégance', address:'21 Rue du Bac, 75007 Paris', phone:'01 45 56 78 90', img:'https://via.placeholder.com/200x120?text=Élégance'},
+  {region:'Île-de-France', type:'Coiffeur', name:'Hair Studio Paris', address:'10 Avenue de l’Opéra, 75001 Paris', phone:'01 42 60 11 11', img:'https://via.placeholder.com/200x120?text=Hair+Studio+Paris'},
+  {region:'Île-de-France', type:'Coiffeur', name:'Studio Coiffure', address:'22 Rue de la Paix, 75002 Paris', phone:'01 40 20 30 40', img:'https://via.placeholder.com/200x120?text=Studio+Coiffure'},
+  {region:'Île-de-France', type:'Coiffeur', name:'Paris Hair', address:'15 Rue de Rivoli, 75001 Paris', phone:'01 44 55 66 77', img:'https://via.placeholder.com/200x120?text=Paris+Hair'},
+  {region:'Île-de-France', type:'Coiffeur', name:'Salon Élite', address:'8 Rue Saint-Honoré, 75001 Paris', phone:'01 40 50 60 70', img:'https://via.placeholder.com/200x120?text=Salon+Élite'},
+  {region:'Île-de-France', type:'Coiffeur', name:'Hair Concept', address:'12 Boulevard Haussmann, 75009 Paris', phone:'01 42 80 90 10', img:'https://via.placeholder.com/200x120?text=Hair+Concept'},
+  {region:'Île-de-France', type:'Coiffeur', name:'Coiffure Chic', address:'5 Avenue Montaigne, 75008 Paris', phone:'01 43 50 60 70', img:'https://via.placeholder.com/200x120?text=Coiffure+Chic'},
+  {region:'Île-de-France', type:'Coiffeur', name:'Studio Parisien', address:'20 Rue de la Pompe, 75016 Paris', phone:'01 45 55 66 77', img:'https://via.placeholder.com/200x120?text=Studio+Parisien'},
 
-  // Coiffeurs Normandie
+  // 10 Coiffeurs Normandie
   {region:'Normandie', type:'Coiffeur', name:'Salon Normand 1', address:'1 Rue du Marché, 14000 Caen', phone:'02 31 11 22 01', img:'https://via.placeholder.com/200x120?text=Salon+Normand+1'},
   {region:'Normandie', type:'Coiffeur', name:'Salon Normand 2', address:'2 Rue des Fleurs, 14000 Caen', phone:'02 31 11 22 02', img:'https://via.placeholder.com/200x120?text=Salon+Normand+2'},
-  {region:'Normandie', type:'Coiffeur', name:'Salon Normand 3', address:'3 Rue Saint-Pierre, 14000 Caen', phone:'02 31 11 22 03', img:'https://via.placeholder.com/200x120?text=Salon+Normand+3'},
-  {region:'Normandie', type:'Coiffeur', name:'Salon Normand 4', address:'4 Avenue de la Mer, 14000 Caen', phone:'02 31 11 22 04', img:'https://via.placeholder.com/200x120?text=Salon+Normand+4'},
-  {region:'Normandie', type:'Coiffeur', name:'Salon Normand 5', address:'5 Boulevard Clemenceau, 14000 Caen', phone:'02 31 11 22 05', img:'https://via.placeholder.com/200x120?text=Salon+Normand+5'},
-  {region:'Normandie', type:'Coiffeur', name:'Salon Normand 6', address:'6 Rue du Château, 14000 Caen', phone:'02 31 11 22 06', img:'https://via.placeholder.com/200x120?text=Salon+Normand+6'},
-  {region:'Normandie', type:'Coiffeur', name:'Salon Normand 7', address:'7 Rue du Port, 14000 Caen', phone:'02 31 11 22 07', img:'https://via.placeholder.com/200x120?text=Salon+Normand+7'},
-  {region:'Normandie', type:'Coiffeur', name:'Salon Normand 8', address:'8 Rue de la Paix, 14000 Caen', phone:'02 31 11 22 08', img:'https://via.placeholder.com/200x120?text=Salon+Normand+8'},
-  {region:'Normandie', type:'Coiffeur', name:'Salon Normand 9', address:'9 Rue du Moulin, 14000 Caen', phone:'02 31 11 22 09', img:'https://via.placeholder.com/200x120?text=Salon+Normand+9'},
-  {region:'Normandie', type:'Coiffeur', name:'Salon Normand 10', address:'10 Avenue du Général, 14000 Caen', phone:'02 31 11 22 10', img:'https://via.placeholder.com/200x120?text=Salon+Normand+10'},
+  {region:'Normandie', type:'Coiffeur', name:'Salon Normand 3', address:'3 Rue des Lilas, 14000 Caen', phone:'02 31 11 22 03', img:'https://via.placeholder.com/200x120?text=Salon+Normand+3'},
+  {region:'Normandie', type:'Coiffeur', name:'Salon Normand 4', address:'4 Rue de la Gare, 14000 Caen', phone:'02 31 11 22 04', img:'https://via.placeholder.com/200x120?text=Salon+Normand+4'},
+  {region:'Normandie', type:'Coiffeur', name:'Salon Normand 5', address:'5 Rue Saint-Pierre, 14000 Caen', phone:'02 31 11 22 05', img:'https://via.placeholder.com/200x120?text=Salon+Normand+5'},
+  {region:'Normandie', type:'Coiffeur', name:'Salon Normand 6', address:'6 Rue des Acacias, 14000 Caen', phone:'02 31 11 22 06', img:'https://via.placeholder.com/200x120?text=Salon+Normand+6'},
+  {region:'Normandie', type:'Coiffeur', name:'Salon Normand 7', address:'7 Rue du Moulin, 14000 Caen', phone:'02 31 11 22 07', img:'https://via.placeholder.com/200x120?text=Salon+Normand+7'},
+  {region:'Normandie', type:'Coiffeur', name:'Salon Normand 8', address:'8 Rue du Parc, 14000 Caen', phone:'02 31 11 22 08', img:'https://via.placeholder.com/200x120?text=Salon+Normand+8'},
+  {region:'Normandie', type:'Coiffeur', name:'Salon Normand 9', address:'9 Rue des Tilleuls, 14000 Caen', phone:'02 31 11 22 09', img:'https://via.placeholder.com/200x120?text=Salon+Normand+9'},
+  {region:'Normandie', type:'Coiffeur', name:'Salon Normand 10', address:'10 Rue des Roses, 14000 Caen', phone:'02 31 11 22 10', img:'https://via.placeholder.com/200x120?text=Salon+Normand+10'},
 
-  // Restaurants Normandie
+  // 10 Restaurants Normandie
   {region:'Normandie', type:'Restaurant', name:'Le Gourmet', address:'12 Rue de la Paix, 14000 Caen', phone:'02 31 44 55 66', img:'https://via.placeholder.com/200x120?text=Le+Gourmet'},
-  {region:'Normandie', type:'Restaurant', name:'La Table Normande', address:'5 Rue du Marché, 14000 Caen', phone:'02 31 44 55 67', img:'https://via.placeholder.com/200x120?text=La+Table+Normande'},
-  {region:'Normandie', type:'Restaurant', name:'Chez Léon', address:'3 Avenue Clemenceau, 14000 Caen', phone:'02 31 44 55 68', img:'https://via.placeholder.com/200x120?text=Chez+Léon'},
-  {region:'Normandie', type:'Restaurant', name:'Bistrot du Port', address:'8 Quai de la Seine, 14000 Caen', phone:'02 31 44 55 69', img:'https://via.placeholder.com/200x120?text=Bistrot+du+Port'},
-  {region:'Normandie', type:'Restaurant', name:'Le Quai', address:'7 Rue du Port, 14000 Caen', phone:'02 31 44 55 70', img:'https://via.placeholder.com/200x120?text=Le+Quai'},
-  {region:'Normandie', type:'Restaurant', name:'L’Assiette Normande', address:'2 Rue Saint-Pierre, 14000 Caen', phone:'02 31 44 55 71', img:'https://via.placeholder.com/200x120?text=L’Assiette+Normande'},
-  {region:'Normandie', type:'Restaurant', name:'La Crêperie', address:'10 Rue des Fleurs, 14000 Caen', phone:'02 31 44 55 72', img:'https://via.placeholder.com/200x120?text=La+Crêperie'},
-  {region:'Normandie', type:'Restaurant', name:'Le Jardin', address:'11 Boulevard Clemenceau, 14000 Caen', phone:'02 31 44 55 73', img:'https://via.placeholder.com/200x120?text=Le+Jardin'},
-  {region:'Normandie', type:'Restaurant', name:'Les Saveurs', address:'15 Rue du Château, 14000 Caen', phone:'02 31 44 55 74', img:'https://via.placeholder.com/200x120?text=Les+Saveurs'},
-  {region:'Normandie', type:'Restaurant', name:'Maison Normande', address:'20 Avenue du Général, 14000 Caen', phone:'02 31 44 55 75', img:'https://via.placeholder.com/200x120?text=Maison+Normande'},
+  {region:'Normandie', type:'Restaurant', name:'La Table Normande', address:'5 Rue du Château, 14000 Caen', phone:'02 31 44 55 67', img:'https://via.placeholder.com/200x120?text=La+Table+Normande'},
+  {region:'Normandie', type:'Restaurant', name:'Le Normand', address:'8 Rue des Lilas, 14000 Caen', phone:'02 31 44 55 68', img:'https://via.placeholder.com/200x120?text=Le+Normand'},
+  {region:'Normandie', type:'Restaurant', name:'Maison du Goût', address:'2 Rue du Marché, 14000 Caen', phone:'02 31 44 55 69', img:'https://via.placeholder.com/200x120?text=Maison+du+Goût'},
+  {region:'Normandie', type:'Restaurant', name:'Chez Pierre', address:'7 Rue de l’Église, 14000 Caen', phone:'02 31 44 55 70', img:'https://via.placeholder.com/200x120?text=Chez+Pierre'},
+  {region:'Normandie', type:'Restaurant', name:'L’Auberge Normande', address:'10 Rue du Moulin, 14000 Caen', phone:'02 31 44 55 71', img:'https://via.placeholder.com/200x120?text=L’Auberge+Normande'},
+  {region:'Normandie', type:'Restaurant', name:'Le Quai', address:'14 Rue du Port, 14000 Caen', phone:'02 31 44 55 72', img:'https://via.placeholder.com/200x120?text=Le+Quai'},
+  {region:'Normandie', type:'Restaurant', name:'La Mer', address:'3 Rue du Phare, 14000 Caen', phone:'02 31 44 55 73', img:'https://via.placeholder.com/200x120?text=La+Mer'},
+  {region:'Normandie', type:'Restaurant', name:'Le Pavillon', address:'6 Rue de la Plage, 14000 Caen', phone:'02 31 44 55 74', img:'https://via.placeholder.com/200x120?text=Le+Pavillon'},
+  {region:'Normandie', type:'Restaurant', name:'Les Délices', address:'9 Rue des Fleurs, 14000 Caen', phone:'02 31 44 55 75', img:'https://via.placeholder.com/200x120?text=Les+Délices'},
 
-  // Boulangeries Normandie
+  // 10 Boulangeries Normandie
   {region:'Normandie', type:'Boulangerie', name:'La Fournée', address:'1 Rue du Marché, 14000 Caen', phone:'02 31 77 88 01', img:'https://via.placeholder.com/200x120?text=La+Fournée'},
-  {region:'Normandie', type:'Boulangerie', name:'Boulangerie du Port', address:'2 Rue des Fleurs, 14000 Caen', phone:'02 31 77 88 02', img:'https://via.placeholder.com/200x120?text=Boulangerie+du+Port'},
-  {region:'Normandie', type:'Boulangerie', name:'Pain & Tradition', address:'3 Rue Saint-Pierre, 14000 Caen', phone:'02 31 77 88 03', img:'https://via.placeholder.com/200x120?text=Pain+%26+Tradition'},
-  {region:'Normandie', type:'Boulangerie', name:'Boulangerie Normande', address:'4 Avenue de la Mer, 14000 Caen', phone:'02 31 77 88 04', img:'https://via.placeholder.com/200x120?text=Boulangerie+Normande'},
-  {region:'Normandie', type:'Boulangerie', name:'Le Pain Doré', address:'5 Boulevard Clemenceau, 14000 Caen', phone:'02 31 77 88 05', img:'https://via.placeholder.com/200x120?text=Le+Pain+Doré'},
-  {region:'Normandie', type:'Boulangerie', name:'Maison du Pain', address:'6 Rue du Château, 14000 Caen', phone:'02 31 77 88 06', img:'https://via.placeholder.com/200x120?text=Maison+du+Pain'},
-  {region:'Normandie', type:'Boulangerie', name:'La Tradition', address:'7 Rue du Port, 14000 Caen', phone:'02 31 77 88 07', img:'https://via.placeholder.com/200x120?text=La+Tradition'},
-  {region:'Normandie', type:'Boulangerie', name:'Boulangerie du Centre', address:'8 Rue de la Paix, 14000 Caen', phone:'02 31 77 88 08', img:'https://via.placeholder.com/200x120?text=Boulangerie+du+Centre'},
-  {region:'Normandie', type:'Boulangerie', name:'Le Fournil', address:'9 Rue du Moulin, 14000 Caen', phone:'02 31 77 88 09', img:'https://via.placeholder.com/200x120?text=Le+Fournil'},
-  {region:'Normandie', type:'Boulangerie', name:'Pain & Saveur', address:'10 Avenue du Général, 14000 Caen', phone:'02 31 77 88 10', img:'https://via.placeholder.com/200x120?text=Pain+%26+Saveur'}
+  {region:'Normandie', type:'Boulangerie', name:'Pain & Tradition', address:'3 Rue des Halles, 14000 Caen', phone:'02 31 77 88 02', img:'https://via.placeholder.com/200x120?text=Pain+%26+Tradition'},
+  {region:'Normandie', type:'Boulangerie', name:'Le Bon Pain', address:'5 Rue Saint-Pierre, 14000 Caen', phone:'02 31 77 88 03', img:'https://via.placeholder.com/200x120?text=Le+Bon+Pain'},
+  {region:'Normandie', type:'Boulangerie', name:'Maison du Pain', address:'6 Rue du Parc, 14000 Caen', phone:'02 31 77 88 04', img:'https://via.placeholder.com/200x120?text=Maison+du+Pain'},
+  {region:'Normandie', type:'Boulangerie', name:'Boulangerie Normande', address:'7 Rue des Lilas, 14000 Caen', phone:'02 31 77 88 05', img:'https://via.placeholder.com/200x120?text=Boulangerie+Normande'},
+  {region:'Normandie', type:'Boulangerie', name:'Le Fournil', address:'8 Rue du Château, 14000 Caen', phone:'02 31 77 88 06', img:'https://via.placeholder.com/200x120?text=Le+Fournil'},
+  {region:'Normandie', type:'Boulangerie', name:'La Baguette', address:'9 Rue des Roses, 14000 Caen', phone:'02 31 77 88 07', img:'https://via.placeholder.com/200x120?text=La+Baguette'},
+  {region:'Normandie', type:'Boulangerie', name:'Le Pain Doré', address:'10 Rue du Soleil, 14000 Caen', phone:'02 31 77 88 08', img:'https://via.placeholder.com/200x120?text=Le+Pain+Doré'},
+  {region:'Normandie', type:'Boulangerie', name:'Au Fournil', address:'11 Rue du Lac, 14000 Caen', phone:'02 31 77 88 09', img:'https://via.placeholder.com/200x120?text=Au+Fournil'},
+  {region:'Normandie', type:'Boulangerie', name:'Le Pain Normand', address:'12 Rue des Champs, 14000 Caen', phone:'02 31 77 88 10', img:'https://via.placeholder.com/200x120?text=Le+Pain+Normand'}
 ];
 
 let selectedRegion = '';
@@ -140,14 +154,5 @@ function showOverlay(c) {
     <h2>${c.name}</h2>
     <img src="${c.img}" alt="${c.name}">
     <p><strong>Adresse:</strong> ${c.address}</p>
-    <p><strong>Téléphone:</strong> ${c.phone}</p>
-  `;
-  document.getElementById('overlay').style.display='flex';
-}
+    <p
 
-function closeOverlay() {
-  document.getElementById('overlay').style.display='none';
-}
-</script>
-</body>
-</html>
