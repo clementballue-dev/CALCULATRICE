@@ -2,26 +2,32 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Shooter</title>
+<title>Shooter IA</title>
 <style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    background: #4da6ff;
+  html,body{
+    margin:0;
+    padding:0;
+    overflow:hidden;
+    background:#4da6ff;
   }
-
-  #playBtn {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    padding: 15px 25px;
-    font-size: 18px;
-    border: none;
-    border-radius: 8px;
-    background: black;
-    color: white;
-    cursor: pointer;
+  #playBtn{
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    padding:15px 25px;
+    font-size:18px;
+    cursor:pointer;
+  }
+  #overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.8);
+    color:white;
+    display:none;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    font-size:48px;
   }
 </style>
 </head>
@@ -30,45 +36,48 @@
 <canvas id="game"></canvas>
 <button id="playBtn">JOUER</button>
 
+<div id="overlay">
+  <div id="result"></div>
+  <button onclick="location.reload()">REJOUER</button>
+</div>
+
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-
 canvas.width = innerWidth;
 canvas.height = innerHeight;
 
-window.addEventListener("resize", () => {
-  canvas.width = innerWidth;
-  canvas.height = innerHeight;
-});
-
-// ================= CLAVIER =================
 const keys = {};
-window.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
-window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+addEventListener("keydown", e=>keys[e.key.toLowerCase()]=true);
+addEventListener("keyup", e=>keys[e.key.toLowerCase()]=false);
 
-// ================= ETAT =================
 let playing = false;
-let ammo = 10;
-let bullets = [];
 
-// ================= JOUEUR =================
+// ===== JOUEUR =====
 const player = {
-  x: canvas.width / 2,
-  y: canvas.height / 2,
-  size: 40,
-  speed: 5
+  x:canvas.width/2,
+  y:canvas.height/2,
+  size:40,
+  speed:5
 };
 
-// ================= ENNEMI =================
+// ===== ENNEMI INTELLIGENT =====
 const enemy = {
-  x: 200,
-  y: 200,
-  size: 40,
-  life: 3
+  x:200,
+  y:200,
+  size:40,
+  life:3,
+  maxLife:3,
+  dirX:1,
+  dirY:1,
+  shootCooldown:0
 };
 
-// ================= DEPLACEMENT =================
+// ===== BALLES =====
+let bullets = [];
+let enemyBullets = [];
+
+// ===== JOUEUR MOVE =====
 function movePlayer(){
   if(keys["z"]) player.y -= player.speed;
   if(keys["s"]) player.y += player.speed;
@@ -76,96 +85,136 @@ function movePlayer(){
   if(keys["d"]) player.x += player.speed;
 }
 
-// ================= TIR =================
-window.addEventListener("click", () => {
-  if(!playing) return;
-
-  if(ammo > 0){
-    bullets.push({
-      x: player.x + player.size,
-      y: player.y + player.size / 2,
-      speed: 10
-    });
-    ammo--;
-  } else {
-    ammo = 10; // recharge
+// ===== ENNEMI IA =====
+function enemyAI(){
+  // déplacement intelligent (change parfois de direction)
+  if(Math.random() < 0.01){
+    enemy.dirX = Math.random()*2-1;
+    enemy.dirY = Math.random()*2-1;
   }
+
+  enemy.x += enemy.dirX * 2;
+  enemy.y += enemy.dirY * 2;
+
+  // évite les bords
+  if(enemy.x < 50 || enemy.x > canvas.width-50) enemy.dirX *= -1;
+  if(enemy.y < 50 || enemy.y > canvas.height-50) enemy.dirY *= -1;
+
+  // tir intelligent
+  enemy.shootCooldown--;
+  if(enemy.shootCooldown <= 0){
+    shootEnemy();
+    enemy.shootCooldown = 60 + Math.random()*60;
+  }
+}
+
+function shootEnemy(){
+  const dx = player.x - enemy.x;
+  const dy = player.y - enemy.y;
+  const dist = Math.hypot(dx,dy);
+
+  enemyBullets.push({
+    x: enemy.x + enemy.size/2,
+    y: enemy.y + enemy.size/2,
+    vx: (dx/dist)*6,
+    vy: (dy/dist)*6
+  });
+}
+
+// ===== TIR JOUEUR =====
+addEventListener("click", ()=>{
+  if(!playing) return;
+  bullets.push({
+    x:player.x+player.size,
+    y:player.y+player.size/2,
+    vx:8
+  });
 });
 
-// ================= COLLISION =================
-function hitEnemy(b){
+// ===== COLLISIONS =====
+function rectHit(a,b){
   return (
-    b.x > enemy.x &&
-    b.x < enemy.x + enemy.size &&
-    b.y > enemy.y &&
-    b.y < enemy.y + enemy.size
+    a.x < b.x+b.size &&
+    a.x+a.size > b.x &&
+    a.y < b.y+b.size &&
+    a.y+a.size > b.y
   );
 }
 
-// ================= DESSIN =================
+// ===== DRAW =====
 function drawPlayer(){
-  // corps
-  ctx.fillStyle = "#222";
-  ctx.fillRect(player.x, player.y, player.size, player.size);
-
-  // pistolet
-  ctx.fillStyle = "#555";
-  ctx.fillRect(
-    player.x + player.size,
-    player.y + player.size/2 - 5,
-    25,
-    10
-  );
+  ctx.fillStyle="#222";
+  ctx.fillRect(player.x,player.y,player.size,player.size);
 }
 
 function drawEnemy(){
-  if(enemy.life > 0){
-    ctx.fillStyle = "red";
-    ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
-  }
+  ctx.fillStyle="red";
+  ctx.fillRect(enemy.x,enemy.y,enemy.size,enemy.size);
+
+  // barre vie
+  ctx.fillStyle="black";
+  ctx.fillRect(enemy.x,enemy.y-8,enemy.size,5);
+  ctx.fillStyle="lime";
+  ctx.fillRect(enemy.x,enemy.y-8,enemy.size*(enemy.life/enemy.maxLife),5);
 }
 
 function drawBullets(){
-  ctx.fillStyle = "yellow";
-  bullets.forEach((b, i) => {
-    b.x += b.speed;
-    ctx.fillRect(b.x, b.y, 8, 4);
+  ctx.fillStyle="yellow";
+  bullets.forEach((b,i)=>{
+    b.x += b.vx;
+    ctx.fillRect(b.x,b.y,8,4);
 
-    // collision ennemi
-    if(enemy.life > 0 && hitEnemy(b)){
+    if(b.x>enemy.x && b.x<enemy.x+enemy.size && b.y>enemy.y && b.y<enemy.y+enemy.size){
       enemy.life--;
-      bullets.splice(i, 1);
+      bullets.splice(i,1);
+      if(enemy.life<=0) win();
     }
+  });
 
-    // hors écran
-    if(b.x > canvas.width){
-      bullets.splice(i, 1);
+  ctx.fillStyle="orange";
+  enemyBullets.forEach((b,i)=>{
+    b.x += b.vx;
+    b.y += b.vy;
+    ctx.fillRect(b.x,b.y,6,6);
+
+    if(b.x>player.x && b.x<player.x+player.size && b.y>player.y && b.y<player.y+player.size){
+      lose();
     }
   });
 }
 
-// ================= LOOP =================
-function loop(){
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+// ===== VICTOIRE / DEFAITE =====
+function win(){
+  playing=false;
+  overlay("VICTOIRE 🏆");
+}
+function lose(){
+  playing=false;
+  overlay("DÉFAITE ☠️");
+}
+function overlay(text){
+  document.getElementById("result").textContent = text;
+  document.getElementById("overlay").style.display="flex";
+}
 
+// ===== LOOP =====
+function loop(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
   if(playing){
     movePlayer();
+    enemyAI();
     drawPlayer();
     drawEnemy();
     drawBullets();
   }
-
   requestAnimationFrame(loop);
 }
 loop();
 
-// ================= JOUER =================
-document.getElementById("playBtn").onclick = () => {
-  playing = true;
-  document.getElementById("playBtn").style.display = "none";
+document.getElementById("playBtn").onclick=()=>{
+  playing=true;
+  document.getElementById("playBtn").style.display="none";
 };
 </script>
-
 </body>
 </html>
-
