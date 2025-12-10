@@ -72,7 +72,7 @@
   <div class="hud" id="hud">
     <div class="barWrap"><div id="hpBar" class="bar" style="width:100%"></div></div>
     <div class="infoRow">
-      <div id="hpText">Vie: 3 / 3</div>
+      <div id="hpText">Vie: 10 / 10</div>
       <div id="ammoText">Ammo: 10 / 10</div>
     </div>
   </div>
@@ -93,7 +93,9 @@
    - AZERTY controls (ZQSD)
    - Weapons: pistol(10), shotgun, sniper, smg
    - Ennemis intelligents (repositionnement, visée approximative, reload)
-   - 3 hits to kill (except sniper = 1)
+   - Tous les armes font 1 dégât
+   - Joueur a 10 vies
+   - Après 5 tirs consécutifs -> reload forcé 3000ms
    - Map color random each round
    - Pre-game UI: choose skin + weapon
    - "Simuler 2ème joueur" simule l'attente d'un autre joueur.
@@ -164,10 +166,11 @@ canvas.addEventListener('mousedown', e=>{ if(e.button===0) mouse.down = true; })
 canvas.addEventListener('mouseup', e=>{ if(e.button===0) mouse.down = false; });
 
 // Basic weapon definitions
+// ALL weapons dmg set to 1 as requested
 const WEAPONS = {
   pistol: { name:'Pistolet', mag:10, fireRate: 300, bulletSpeed:700, dmg:1, reloadTime:900, spread:6 },
   shotgun: { name:'Pompe', mag:6, fireRate:900, bulletSpeed:600, dmg:1, pellets:6, pelletSpread:18, reloadTime:1400 },
-  sniper: { name:'Sniper', mag:1, fireRate:2000, bulletSpeed:1200, dmg:999, reloadTime:1800, scope:true }, // 1 shot = kill
+  sniper: { name:'Sniper', mag:1, fireRate:2000, bulletSpeed:1200, dmg:1, reloadTime:1800, scope:true }, // now 1 dmg
   smg: { name:'Mitraillette', mag:30, fireRate:80, bulletSpeed:900, dmg:1, reloadTime:1100, spread:8 }
 };
 
@@ -184,14 +187,15 @@ function createPlayer(){
     vx:0, vy:0,
     size:PLAYER_SIZE,
     speed:200,
-    hp:3,
-    maxHp:3,
+    hp:10,           // <-- player has 10 hp now
+    maxHp:10,
     skin,
     weapon,
     canFire:true,
     lastFire:0,
     reloading:false,
-    alive:true
+    alive:true,
+    shotsSinceAutoReload:0  // count shots to force reload every 5 shots
   };
 }
 
@@ -219,7 +223,8 @@ function createEnemy(i){
       return w;
     })(),
     alive:true,
-    aimNoise: rnd(3,10) // in degrees
+    aimNoise: rnd(3,10), // in degrees
+    shotsSinceAutoReload:0
   };
 }
 
@@ -244,8 +249,7 @@ function startRound(){
   const p = createPlayer();
   game.players.push(p);
 
-  // spawn 1 smart enemy (you asked 1 enemy earlier; but we created many earlier; keep 1)
-  // We'll spawn 1 enemy that moves and shoots intelligently
+  // spawn 1 smart enemy (as requested)
   for(let i=0;i<1;i++) game.enemies.push(createEnemy(i+1));
 
   game.running = true;
@@ -352,7 +356,7 @@ function update(dt){
         const e = game.enemies[j];
         if(!e.alive) continue;
         if(pointInRect(b.x,b.y,e.x-e.size/2,e.y-e.size/2,e.size,e.size)){
-          // apply damage (sniper = instant death)
+          // apply damage
           applyDamageToEnemy(e, b);
           game.bullets.splice(i,1);
           break;
@@ -362,7 +366,6 @@ function update(dt){
       // bullet from enemy -> hit player
       if(p.alive && pointInRect(b.x,b.y,p.x-p.size/2,p.y-p.size/2,p.size,p.size)){
         p.hp -= b.dmg;
-        // flash or recoil could be added
         game.bullets.splice(i,1);
         if(p.hp <= 0){
           p.alive = false;
@@ -392,8 +395,10 @@ function pointInRect(px,py,rx,ry,rw,rh){
 // apply damage to enemy
 function applyDamageToEnemy(e, bullet){
   if(!e.alive) return;
+  // all weapons now do 1 dmg
   if(bullet.weaponKey==='sniper'){
-    e.hp = 0;
+    // sniper still only deals 1 (per your request)
+    e.hp -= 1;
   } else {
     e.hp -= bullet.dmg;
   }
@@ -407,7 +412,15 @@ function reloadWeapon(entity){
   if(entity.reloading) return;
   entity.reloading = true;
   const t = entity.weapon.reloadTime || 1000;
-  setTimeout(()=>{ entity.weapon.ammo = entity.weapon.mag; entity.reloading = false; updateHUD(); }, t);
+  setTimeout(()=>{ entity.weapon.ammo = entity.weapon.mag; entity.reloading = false; entity.shotsSinceAutoReload = 0; updateHUD(); }, t);
+}
+
+// Forced auto-reload (used when 5 shots fired)
+function forcedAutoReload(entity){
+  if(entity.reloading) return;
+  entity.reloading = true;
+  // 3 seconds forced reload
+  setTimeout(()=>{ entity.weapon.ammo = entity.weapon.mag; entity.reloading = false; entity.shotsSinceAutoReload = 0; updateHUD(); }, 3000);
 }
 
 // handle firing for a shooter (player or enemy)
@@ -442,6 +455,7 @@ function handleFiring(shooter, dt, isPlayer){
       if(can && weapon.ammo>0){
         shooter.lastFire = now;
         weapon.ammo--;
+        shooter.shotsSinceAutoReload = (shooter.shotsSinceAutoReload||0) + 1;
         // pellets
         for(let i=0;i<weapon.pellets;i++){
           const baseAng = Math.atan2(aimY - shooter.y, aimX - shooter.x);
@@ -451,8 +465,12 @@ function handleFiring(shooter, dt, isPlayer){
           spawnBullet(shooter.x, shooter.y, Math.cos(ang)*speed, Math.sin(ang)*speed, isPlayer ? 'p1' : shooter.id, weapon.key, weapon.dmg);
         }
         if(isPlayer) updateHUD();
-        // auto-reload if 0?
-        if(weapon.ammo===0) reloadWeapon(shooter);
+        // if reached 5 shots -> forced reload 3s
+        if((shooter.shotsSinceAutoReload||0) >= 5){
+          forcedAutoReload(shooter);
+        } else if(weapon.ammo===0){
+          reloadWeapon(shooter);
+        }
       }
     }
   } else {
@@ -462,13 +480,19 @@ function handleFiring(shooter, dt, isPlayer){
       if(can && weapon.ammo>0){
         shooter.lastFire = now;
         weapon.ammo--;
+        shooter.shotsSinceAutoReload = (shooter.shotsSinceAutoReload||0) + 1;
         const ang = Math.atan2(aimY - shooter.y, aimX - shooter.x);
         const spreadDeg = weapon.spread || 0;
         const angWithSpread = ang + degToRad( rnd(-spreadDeg, spreadDeg) );
         const speed = weapon.bulletSpeed;
         spawnBullet(shooter.x, shooter.y, Math.cos(angWithSpread)*speed, Math.sin(angWithSpread)*speed, isPlayer ? 'p1' : shooter.id, weapon.key, weapon.dmg);
         if(isPlayer) updateHUD();
-        if(weapon.ammo===0) reloadWeapon(shooter);
+        // forced reload after 5 shots
+        if((shooter.shotsSinceAutoReload||0) >= 5){
+          forcedAutoReload(shooter);
+        } else if(weapon.ammo===0){
+          reloadWeapon(shooter);
+        }
       }
     }
   }
@@ -541,7 +565,7 @@ function enemyAIUpdate(dt, enemy){
   // Simulate reloading
   if(enemy.weapon.ammo <= 0 && !enemy.reloading){
     enemy.reloading = true;
-    setTimeout(()=>{ enemy.weapon.ammo = enemy.weapon.mag; enemy.reloading=false; }, enemy.weapon.reloadTime || 1000);
+    setTimeout(()=>{ enemy.weapon.ammo = enemy.weapon.mag; enemy.reloading=false; enemy.shotsSinceAutoReload=0; }, enemy.weapon.reloadTime || 1000);
     return;
   }
 
@@ -638,7 +662,6 @@ function drawCharacter(x,y,size, color, trimColor, healthPct, drawGun=false, wea
   const barW = w, barH = 6;
   ctx.fillStyle = '#333';
   ctx.fillRect(x - barW/2, y - h/2 - 16, barW, barH);
-  ctx.fillStyle = `linear-gradient(90deg,#00d08a,#00a68f)`;
   ctx.fillStyle = '#0bda85';
   ctx.fillRect(x - barW/2, y - h/2 - 16, barW * (healthPct||0), barH);
 
@@ -709,8 +732,6 @@ function drawCrosshair(x,y){
 
 // Utility: shade color
 function shade(hex, percent) {
-  // hex like '#rrggbb' or 'rgb()' not handled; we used HSL earlier skins so this function will accept simple hex
-  // fallback: return original if parse fails
   try{
     if(hex.startsWith('hsl')) return hex;
     hex = hex.replace('#','');
@@ -727,7 +748,6 @@ function shade(hex, percent) {
 }
 
 function degToRad(d){ return d * Math.PI / 180; }
-
 
 // skins color map
 function getSkinColor(idx){
