@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="utf-8" />
@@ -94,8 +93,7 @@
 
   <!-- bottom-right UI -->
   <div class="ui">
-    <button id="joinBtn" class="btn">Simuler 2ème joueur</button>
-    <button id="twoPlayerBtn" class="btn">Activer mode 2 joueurs local</button>
+    <button id="twoPlayerBtn" class="btn">Activer Joueur 2</button>
     <button id="playBtn" class="btn">JOUER</button>
   </div>
 
@@ -104,100 +102,83 @@
 </div>
 
 <script>
-/* --------------------------
-   Prototype Arène 2D (prototype étendu)
-   Mode multijoueur local optionnel ajouté
-   Toutes les armes = 1 dégât, reload auto toutes les 5 balles
-   Match best-of-3
--------------------------- */
-
-const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
 let W=canvas.width,H=canvas.height;
 
-let game = {
+let game={
   running:false,
   roundStartTime:0,
   bgColor:'#2b7',
   players:[],
-  enemies: [],
-  bullets: [],
+  enemies:[],
+  bullets:[],
   roundWinner:null,
-  lobbySimulated:false,
-  localTwoPlayer:false,
-  match: { roundsPerMatch:3, currentRound:0, playerRoundWins:0, enemyRoundWins:0 }
+  twoPlayerLocal:false,
+  match:{
+    roundsPerMatch:3,
+    currentRound:0,
+    playerRoundWins:0,
+    enemyRoundWins:0
+  }
 };
 
-const skinSelect = document.getElementById('skinSelect');
-const weaponSelect = document.getElementById('weaponSelect');
-const playBtn = document.getElementById('playBtn');
-const joinBtn = document.getElementById('joinBtn');
-const twoPlayerBtn = document.getElementById('twoPlayerBtn');
-const overlayScreen = document.getElementById('overlayScreen');
-const hudHpBar = document.getElementById('hpBar');
-const hpText = document.getElementById('hpText');
-const ammoText = document.getElementById('ammoText');
-const roundText = document.getElementById('roundText');
+const skinSelect=document.getElementById('skinSelect');
+const weaponSelect=document.getElementById('weaponSelect');
+const playBtn=document.getElementById('playBtn');
+const twoPlayerBtn=document.getElementById('twoPlayerBtn');
+const overlayScreen=document.getElementById('overlayScreen');
+const hudHpBar=document.getElementById('hpBar');
+const hpText=document.getElementById('hpText');
+const ammoText=document.getElementById('ammoText');
+const roundText=document.getElementById('roundText');
 
-const pseudoInput = document.getElementById('pseudoInput');
-const savePseudoBtn = document.getElementById('savePseudoBtn');
-const leaderboardEl = document.getElementById('leaderboard');
+const pseudoInput=document.getElementById('pseudoInput');
+const savePseudoBtn=document.getElementById('savePseudoBtn');
+const leaderboardEl=document.getElementById('leaderboard');
 
-function randInt(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
-function randChoice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-function rnd(min,max){ return Math.random()*(max-min)+min; }
+function randInt(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function randChoice(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function rnd(min,max){return Math.random()*(max-min)+min;}
 
-const PLAYER_SIZE = 44;
-const ENEMY_SIZE = 44;
-const keys = { z:false,q:false,s:false,d:false, r:false, up:false, down:false, left:false, right:false };
-window.addEventListener('keydown',(e)=>{
+const PLAYER_SIZE=44;
+const ENEMY_SIZE=44;
+
+const keys={ z:false,q:false,s:false,d:false, r:false, i:false,k:false,j:false,l:false,m:false };
+window.addEventListener('keydown',e=>{
   const k=e.key.toLowerCase();
-  if(k==='z') keys.z=true;
-  if(k==='q') keys.q=true;
-  if(k==='s') keys.s=true;
-  if(k==='d') keys.d=true;
-  if(k==='r') keys.r=true;
-  if(k==='arrowup') keys.up=true;
-  if(k==='arrowdown') keys.down=true;
-  if(k==='arrowleft') keys.left=true;
-  if(k==='arrowright') keys.right=true;
+  if(k in keys) keys[k]=true;
 });
-window.addEventListener('keyup',(e)=>{
+window.addEventListener('keyup',e=>{
   const k=e.key.toLowerCase();
-  if(k==='z') keys.z=false;
-  if(k==='q') keys.q=false;
-  if(k==='s') keys.s=false;
-  if(k==='d') keys.d=false;
-  if(k==='r') keys.r=false;
-  if(k==='arrowup') keys.up=false;
-  if(k==='arrowdown') keys.down=false;
-  if(k==='arrowleft') keys.left=false;
-  if(k==='arrowright') keys.right=false;
+  if(k in keys) keys[k]=false;
 });
 
-let mouse={x:W/2,y:H/2,down:false};
+let mouse={ x:W/2, y:H/2, down:false };
 canvas.addEventListener('mousemove',e=>{
   const rect=canvas.getBoundingClientRect();
   mouse.x=e.clientX-rect.left;
   mouse.y=e.clientY-rect.top;
 });
-canvas.addEventListener('mousedown', e=>{ if(e.button===0) mouse.down=true; });
-canvas.addEventListener('mouseup', e=>{ if(e.button===0) mouse.down=false; });
+canvas.addEventListener('mousedown',e=>{ if(e.button===0) mouse.down=true; });
+canvas.addEventListener('mouseup',e=>{ if(e.button===0) mouse.down=false; });
 
-// Weapons
 const WEAPONS={
-  pistol: { name:'Pistolet', mag:10, fireRate:300, bulletSpeed:700, dmg:1, reloadTime:900, spread:6, range:800 },
-  shotgun: { name:'Pompe', mag:6, fireRate:900, bulletSpeed:600, dmg:1, pellets:6, pelletSpread:18, reloadTime:1400, range:220 },
-  sniper: { name:'Sniper', mag:1, fireRate:2000, bulletSpeed:1200, dmg:1, reloadTime:1800, scope:true, range:1400 },
-  smg: { name:'Mitraillette', mag:30, fireRate:80, bulletSpeed:900, dmg:1, reloadTime:1100, spread:8, range:900 }
+  pistol:{ name:'Pistolet', mag:10, fireRate:300, bulletSpeed:700, dmg:1, reloadTime:900, spread:6, range:800 },
+  shotgun:{ name:'Pompe', mag:6, fireRate:900, bulletSpeed:600, dmg:1, pellets:6, pelletSpread:18, reloadTime:1400, range:220 },
+  sniper:{ name:'Sniper', mag:1, fireRate:2000, bulletSpeed:1200, dmg:1, reloadTime:1800, scope:true, range:1400 },
+  smg:{ name:'Mitraillette', mag:30, fireRate:80, bulletSpeed:900, dmg:1, reloadTime:1100, spread:8, range:900 }
 };
 
-function createPlayer(id,skin){
-  const weaponKey=weaponSelect.value||'pistol';
-  const weapon=Object.assign({},WEAPONS[weaponKey]);
-  weapon.key=weaponKey; weapon.ammo=weapon.mag; weapon.shotsSinceAutoReload=0;
-  return { id, x:randInt(80,W-80), y:randInt(80,H-80), vx:0,vy:0, size:PLAYER_SIZE, speed:200, hp:10, maxHp:10, skin, weapon, canFire:true, lastFire:0, reloading:false, alive:true };
+function createPlayer(skinOverride=0, weaponOverride='pistol', pos){ 
+  const skin=skinOverride||parseInt(skinSelect.value,10)||0;
+  const weapon=Object.assign({},WEAPONS[weaponOverride||weaponSelect.value||'pistol']);
+  weapon.key=weaponOverride||weaponSelect.value||'pistol';
+  weapon.ammo=weapon.mag;
+  weapon.shotsSinceAutoReload=0;
+  return { id:'p'+(game.players.length+1), x:pos.x, y:pos.y, vx:0, vy:0, size:PLAYER_SIZE, speed:200, hp:10, maxHp:10, skin, weapon, canFire:true, lastFire:0, reloading:false, alive:true };
 }
+
 function createEnemy(i){
   const wkey=randChoice(['pistol','shotgun','smg']);
   const w=Object.assign({},WEAPONS[wkey]);
@@ -205,136 +186,138 @@ function createEnemy(i){
   return { id:'e'+i, x:randInt(80,W-80), y:randInt(80,H-80), size:ENEMY_SIZE, speed:120, hp:10, maxHp:10, state:'patrol', targetPoint:null, reactionTime:rnd(300,1200), lastSeeTime:0, lastAction:0, weapon:w, alive:true, aimNoise:rnd(3,10) };
 }
 
-function spawnBullet(x,y,vx,vy,owner,weaponKey,dmg,maxRange){
-  game.bullets.push({x,y,vx,vy,owner,dmg,life:2000,weaponKey,ox:x,oy:y,maxRange:maxRange||1000});
+function spawnBullet(x,y,dx,dy,owner,weaponKey,dmg,maxRange){
+  game.bullets.push({ x,y,vx:dx,vy:dy,owner,dmg,life:2000,weaponKey,ox:x,oy:y,maxRange:maxRange||1000 });
 }
 
 function startRound(){
   if(game.match.currentRound===0){ game.match.playerRoundWins=0; game.match.enemyRoundWins=0; }
   game.match.currentRound++;
-  game.bullets=[]; game.enemies=[]; game.players=[]; game.roundWinner=null; game.roundStartTime=performance.now(); game.bgColor=`hsl(${randInt(0,360)} ${randInt(40,70)}% ${randInt(35,55)}%)`;
-  game.players.push(createPlayer('p1',parseInt(skinSelect.value,10)||0));
-  if(game.localTwoPlayer) game.players.push(createPlayer('p2',parseInt(skinSelect.value,10)||1));
-  game.enemies.push(createEnemy(1));
+  game.bullets=[]; game.enemies=[]; game.players=[]; game.roundWinner=null;
+  game.roundStartTime=performance.now(); game.bgColor=`hsl(${randInt(0,360)} ${randInt(40,70)}% ${randInt(35,55)}%)`;
+  
+  const p1=createPlayer(0,null,{x:W/4,y:H/2}); game.players.push(p1);
+  if(game.twoPlayerLocal){ const p2=createPlayer(1,null,{x:3*W/4,y:H/2}); game.players.push(p2); }
+
+  for(let i=0;i<1;i++) game.enemies.push(createEnemy(i+1));
+
   game.running=true; overlayScreen.innerHTML=''; updateHUD();
 }
 
-joinBtn.addEventListener('click',()=>{
-  game.lobbySimulated=!game.lobbySimulated;
-  joinBtn.textContent = game.lobbySimulated ? '2ème joueur présent (simulé)' : 'Simuler 2ème joueur';
-});
-
 twoPlayerBtn.addEventListener('click',()=>{
-  game.localTwoPlayer=!game.localTwoPlayer;
-  twoPlayerBtn.textContent = game.localTwoPlayer ? 'Mode 2 joueurs activé' : 'Activer mode 2 joueurs local';
+  game.twoPlayerLocal=!game.twoPlayerLocal;
+  twoPlayerBtn.textContent=game.twoPlayerLocal ? 'Joueur 2 activé' : 'Activer Joueur 2';
 });
 
-playBtn.addEventListener('click',()=>{
-  if(game.lobbySimulated||game.localTwoPlayer){
-    startRound();
-  } else {
-    showOverlayMessage('En attente d’un autre joueur… (simulation)',1500,startRound);
-  }
-});
+playBtn.addEventListener('click',()=>{ startRound(); });
 
-function showOverlayMessage(msg,ms,cb){
-  overlayScreen.innerHTML=`<div class="screenBox"><h1>${msg}</h1></div>`;
-  setTimeout(()=>{ overlayScreen.innerHTML=''; if(cb) cb(); }, ms);
-}
+function showOverlayMessage(msg,ms,cb){ overlayScreen.innerHTML=`<div class="screenBox"><h1>${msg}</h1></div>`; setTimeout(()=>{ overlayScreen.innerHTML=''; if(cb) cb(); },ms); }
 
 let lastTime=performance.now();
-function loop(now){
-  const dt=Math.min(50,now-lastTime)/1000;
-  lastTime=now;
-  update(dt); render();
-  requestAnimationFrame(loop);
-}
+function loop(now){ const dt=Math.min(50,now-lastTime)/1000; lastTime=now; update(dt); render(); requestAnimationFrame(loop); }
 requestAnimationFrame(loop);
 
-// Local storage leaderboard
-function getSavedPseudo(){ return localStorage.getItem('mini_arena_pseudo') || ''; }
+function getSavedPseudo(){ return localStorage.getItem('mini_arena_pseudo')||''; }
 function savePseudo(name){ if(!name) return; localStorage.setItem('mini_arena_pseudo',name); if(!getCrownsFor(name)) setCrownsFor(name,0); refreshLeaderboard(); }
 function getCrownsFor(name){ const v=localStorage.getItem('mini_arena_crowns_'+name); return v?parseInt(v,10):0; }
 function setCrownsFor(name,n){ localStorage.setItem('mini_arena_crowns_'+name,String(n)); }
-function addCrownsTo(name,add){ setCrownsFor(name,(getCrownsFor(name)||0)+add); }
-function refreshLeaderboard(){
-  const list=[]; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.startsWith('mini_arena_crowns_')){ const name=k.replace('mini_arena_crowns_',''); const crowns=parseInt(localStorage.getItem(k),10)||0; list.push({name,crowns}); } }
-  list.sort((a,b)=>b.crowns-a.crowns); leaderboardEl.innerHTML=''; if(list.length===0) leaderboardEl.innerHTML='<div class="small">Aucun joueur pour l’instant</div>';
-  list.forEach(it=>{ const row=document.createElement('div'); row.className='lb-row'; row.innerHTML=`<div>${escapeHtml(it.name)}</div><div>${it.crowns} 👑</div>`; leaderboardEl.appendChild(row); });
-}
+function addCrownsTo(name,add){ const cur=getCrownsFor(name)||0; setCrownsFor(name,cur+add); }
+function refreshLeaderboard(){ const list=[]; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&k.startsWith('mini_arena_crowns_')){ const name=k.replace('mini_arena_crowns_',''); const crowns=parseInt(localStorage.getItem(k),10)||0; list.push({name,crowns}); } } list.sort((a,b)=>b.crowns-a.crowns); leaderboardEl.innerHTML=''; if(list.length===0) leaderboardEl.innerHTML='<div class="small">Aucun joueur pour l’instant</div>'; list.forEach(it=>{ const row=document.createElement('div'); row.className='lb-row'; row.innerHTML=`<div>${escapeHtml(it.name)}</div><div>${it.crowns} 👑</div>`; leaderboardEl.appendChild(row); }); }
 function escapeHtml(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+savePseudoBtn.addEventListener('click',()=>{ const name=pseudoInput.value.trim(); if(!name) return alert('Entre un pseudo valide'); savePseudo(name); alert('Pseudo sauvegardé: '+name); });
+pseudoInput.value=getSavedPseudo(); refreshLeaderboard();
 
-savePseudoBtn.addEventListener('click',()=>{
-  const name=pseudoInput.value.trim(); if(!name) return alert('Entre un pseudo valide'); savePseudo(name); alert('Pseudo sauvegardé: '+name);
-});
+function updateHUD(){ const p=game.players[0]; if(!p) return; const pct=Math.max(0,p.hp/p.maxHp)*100; hudHpBar.style.width=pct+'%'; hpText.textContent=`Vie: ${p.hp} / ${p.maxHp}`; ammoText.textContent=`Ammo: ${p.weapon.ammo} / ${p.weapon.mag}`; roundText.textContent=`Round: ${game.match.currentRound} / ${game.match.roundsPerMatch}`; }
 
-pseudoInput.value=getSavedPseudo();
-refreshLeaderboard();
-
-function updateHUD(){
-  const p=game.players[0]; if(!p) return;
-  const pct=Math.max(0,p.hp/p.maxHp)*100;
-  hudHpBar.style.width=pct+'%';
-  hpText.textContent=`Vie: ${p.hp} / ${p.maxHp}`;
-  ammoText.textContent=`Ammo: ${p.weapon.ammo} / ${p.weapon.mag}`;
-  roundText.textContent=`Round: ${game.match.currentRound} / ${game.match.roundsPerMatch}`;
-}
-
-// --- Game update ---
 function update(dt){
   if(!game.running) return;
-
-  game.players.forEach(p=>{
+  game.players.forEach((p,i)=>{
     if(!p.alive) return;
-    let moveX=0,moveY=0;
-    if(p.id==='p1'){ if(keys.z) moveY-=1; if(keys.s) moveY+=1; if(keys.q) moveX-=1; if(keys.d) moveX+=1; if(mouse.down) fireWeapon(p,mouse.x,mouse.y); if(keys.r) reloadWeapon(p); }
-    else if(p.id==='p2'){ if(keys.up) moveY-=1; if(keys.down) moveY+=1; if(keys.left) moveX-=1; if(keys.right) moveX+=1; if(mouse.down) fireWeapon(p,mouse.x,mouse.y); if(keys.r) reloadWeapon(p); }
-    const len=Math.hypot(moveX,moveY); if(len>0){ moveX/=len; moveY/=len; }
-    p.x+=moveX*p.speed*dt; p.y+=moveY*p.speed*dt;
-    p.x=Math.max(p.size/2,Math.min(W-p.size/2,p.x)); p.y=Math.max(p.size/2,Math.min(H-p.size/2,p.y));
+    let mx=0,my=0;
+    if(i===0){ if(keys.z) my-=1; if(keys.s) my+=1; if(keys.q) mx-=1; if(keys.d) mx+=1; }
+    else{ if(keys.i) my-=1; if(keys.k) my+=1; if(keys.j) mx-=1; if(keys.l) mx+=1; }
+    if(mx!==0||my!==0){ const len=Math.hypot(mx,my); mx/=len; my/=len; p.x+=mx*p.speed*dt; p.y+=my*p.speed*dt; }
+    p.x=Math.max(p.size/2,Math.min(W-p.size/2,p.x));
+    p.y=Math.max(p.size/2,Math.min(H-p.size/2,p.y));
   });
+
+  handleFiring(game.players[0],mouse.x,mouse.y,true);
+  if(game.twoPlayerLocal) handleFiring(game.players[1],keys.j||keys.l?mouse.x:W*3/4,keys.i||keys.k?mouse.y:H/2,true);
+
+  game.enemies.forEach(enemyAIUpdate.bind(null,dt));
 
   for(let i=game.bullets.length-1;i>=0;i--){
-    const b=game.bullets[i];
-    b.x+=b.vx*dt; b.y+=b.vy*dt; b.life-=dt*1000;
-    if(b.life<=0 || Math.hypot(b.x-b.ox,b.y-b.oy)>b.maxRange){ game.bullets.splice(i,1); continue; }
-    game.players.forEach(p=>{ if(p.id===b.owner) return; if(!p.alive) return; const dx=p.x-b.x,dy=p.y-b.y; if(Math.abs(dx)<p.size/2 && Math.abs(dy)<p.size/2){ p.hp-=b.dmg; game.bullets.splice(i,1); if(p.hp<=0){ p.alive=false; if(b.owner==='p1') game.match.playerRoundWins++; else game.match.enemyRoundWins++; checkRoundEnd(); } } });
+    const b=game.bullets[i]; b.x+=b.vx*dt; b.y+=b.vy*dt; b.life-=dt*1000;
+    const distTravelled=Math.hypot(b.x-b.ox,b.y-b.oy);
+    if(b.life<=0||b.x<-50||b.x>W+50||b.y<-50||b.y>H+50||distTravelled>b.maxRange){ game.bullets.splice(i,1); continue; }
+    if(b.owner.startsWith('p')){
+      game.enemies.forEach(e=>{ if(!e.alive) return; if(pointInRect(b.x,b.y,e.x-e.size/2,e.y-e.size/2,e.size,e.size)){ e.hp-=b.dmg; if(e.hp<=0){ e.alive=false; } game.bullets.splice(i,1); } });
+    } else { game.players.forEach(p=>{ if(!p.alive) return; if(pointInRect(b.x,b.y,p.x-p.size/2,p.y-p.size/2,p.size,p.size)){ p.hp-=b.dmg; if(p.hp<=0){ p.alive=false; game.running=false; endRound(false); } game.bullets.splice(i,1); } }); }
   }
-}
 
-function fireWeapon(player,targetX,targetY){
-  const now=performance.now(); const w=player.weapon;
-  if(!player.canFire || player.reloading || w.ammo<=0) return;
-  if(now-player.lastFire<w.fireRate) return;
-  player.lastFire=now;
-  w.ammo--; w.shotsSinceAutoReload++;
-  const angle=Math.atan2(targetY-player.y,targetX-player.x)+rnd(-w.spread||0,w.spread||0)*Math.PI/180;
-  const speed=w.bulletSpeed||700;
-  spawnBullet(player.x,player.y,Math.cos(angle)*speed,Math.sin(angle)*speed,player.id,w.key,w.dmg,w.range);
-  if(w.shotsSinceAutoReload>=w.mag){ reloadWeapon(player); }
-}
-function reloadWeapon(player){ if(player.reloading) return; player.reloading=true; setTimeout(()=>{ player.weapon.ammo=player.weapon.mag; player.weapon.shotsSinceAutoReload=0; player.reloading=false; }, player.weapon.reloadTime); }
+  const aliveEnemies=game.enemies.filter(e=>e.alive);
+  if(aliveEnemies.length===0){ game.running=false; endRound(true); }
 
-function checkRoundEnd(){
-  if(game.match.playerRoundWins>=2){ game.running=false; addCrownsTo(getSavedPseudo(),1); refreshLeaderboard(); showOverlayMessage('Tu as gagné le match 🎉',2500); }
-  else if(game.match.enemyRoundWins>=2){ game.running=false; showOverlayMessage('Tu as perdu 😢',2500); }
-  else { setTimeout(()=>startRound(),1500); }
-}
-
-// --- Render ---
-function render(){
-  ctx.fillStyle=game.bgColor; ctx.fillRect(0,0,W,H);
-  game.players.forEach(p=>{
-    if(!p.alive) return;
-    ctx.fillStyle=['blue','red','green','yellow'][p.skin%4]; ctx.fillRect(p.x-p.size/2,p.y-p.size/2,p.size,p.size);
-  });
-  game.bullets.forEach(b=>{
-    ctx.fillStyle='white'; ctx.beginPath(); ctx.arc(b.x,b.y,4,0,Math.PI*2); ctx.fill();
-  });
-  game.enemies.forEach(e=>{ if(!e.alive) return; ctx.fillStyle='purple'; ctx.fillRect(e.x-e.size/2,e.y-e.size/2,e.size,e.size); });
   updateHUD();
 }
 
+function pointInRect(px,py,rx,ry,rw,rh){ return px>=rx&&px<=rx+rw&&py>=ry&&py<=ry+rh; }
+
+function handleFiring(shooter,targetX,targetY,isPlayer){
+  if(!shooter.alive||shooter.reloading) return;
+  const w=shooter.weapon; if(w.ammo<=0){ reloadWeapon(shooter,w.reloadTime); return; }
+  const now=performance.now();
+  if(isPlayer&&mouse.down&&(now-shooter.lastFire>=w.fireRate)){
+    fireWeapon(shooter,targetX,targetY); shooter.lastFire=now; w.ammo--; if(w.ammo<=0) reloadWeapon(shooter,w.reloadTime);
+  }
+}
+
+function fireWeapon(shooter,targetX,targetY){
+  const w=shooter.weapon;
+  const dx=targetX-shooter.x, dy=targetY-shooter.y;
+  const angle=Math.atan2(dy,dx);
+  if(w.pellets){
+    for(let i=0;i<w.pellets;i++){
+      const spread=(Math.random()-0.5)*w.pelletSpread*Math.PI/180;
+      spawnBullet(shooter.x,shooter.y,Math.cos(angle+spread)*w.bulletSpeed,Math.sin(angle+spread)*w.bulletSpeed,shooter.id,w.key,w.dmg,w.range);
+    }
+  } else {
+    const spread=(w.spread||0)*(Math.random()-0.5)*Math.PI/180;
+    spawnBullet(shooter.x,shooter.y,Math.cos(angle+spread)*w.bulletSpeed,Math.sin(angle+spread)*w.bulletSpeed,shooter.id,w.key,w.dmg,w.range);
+  }
+}
+
+function reloadWeapon(player,time){
+  if(player.reloading) return;
+  player.reloading=true;
+  setTimeout(()=>{ player.weapon.ammo=player.weapon.mag; player.reloading=false; },time);
+}
+
+function enemyAIUpdate(dt,enemy){
+  if(!enemy.alive) return;
+  if(!enemy.targetPoint||Math.hypot(enemy.targetPoint.x-enemy.x,enemy.targetPoint.y-enemy.y)<4){ enemy.targetPoint={x:randInt(50,W-50),y:randInt(50,H-50)}; }
+  const dx=enemy.targetPoint.x-enemy.x; const dy=enemy.targetPoint.y-enemy.y; const len=Math.hypot(dx,dy);
+  enemy.x+=dx/len*enemy.speed*dt; enemy.y+=dy/len*enemy.speed*dt;
+}
+
+function render(){
+  ctx.fillStyle=game.bgColor;
+  ctx.fillRect(0,0,W,H);
+  game.players.forEach(p=>{ if(!p.alive) return; ctx.fillStyle=['#3498db','#e74c3c','#2ecc71','#f1c40f'][p.skin]||'#3498db'; ctx.fillRect(p.x-p.size/2,p.y-p.size/2,p.size,p.size); });
+  game.enemies.forEach(e=>{ if(!e.alive) return; ctx.fillStyle='#ff0000'; ctx.fillRect(e.x-e.size/2,e.y-e.size/2,e.size,e.size); });
+  game.bullets.forEach(b=>{ ctx.fillStyle='#fff'; ctx.fillRect(b.x-3,b.y-3,6,6); });
+}
+
+function endRound(playerWon){
+  if(playerWon){
+    addCrownsTo(getSavedPseudo(),1);
+    showOverlayMessage('Round gagné ! +1 👑',1000,()=>{ if(game.match.currentRound<game.match.roundsPerMatch) startRound(); else showOverlayMessage('Match terminé !',2000); refreshLeaderboard(); });
+  } else {
+    showOverlayMessage('Round perdu !',1000,()=>{ if(game.match.currentRound<game.match.roundsPerMatch) startRound(); else showOverlayMessage('Match terminé !',2000); });
+  }
+}
+
+window.addEventListener('resize',()=>{ W=canvas.width; H=canvas.height; });
 </script>
 </body>
 </html>
