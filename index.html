@@ -2,198 +2,138 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Calculatrice</title>
+    <title>Mon Game Maker Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser-arcade-physics.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #1a1a1a; color: white; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-        .container { background-color: #000; padding: 20px; border-radius: 30px; text-align: center; width: 320px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
-        #messaging, #login, #signup { display: none; }
-        .app-container { display: none; width: 100vw; height: 100vh; background-color: #000; flex-direction: row; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #121212; color: white; }
         
-        /* --- CALCULATRICE --- */
-        #calculatorInput { width: 100%; text-align: right; font-size: 3em; background: transparent; border: none; color: white; margin-bottom: 20px; outline: none; }
-        .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-        .btn { padding: 20px; font-size: 1.5em; border-radius: 50%; border: none; cursor: pointer; height: 65px; width: 65px; display: flex; align-items: center; justify-content: center; }
-        .num { background: #333; color: white; }
-        .op { background: #ff9f0a; color: white; }
-        .special { background: #a5a5a5; color: black; }
-        .zero { grid-column: span 2; width: 142px; border-radius: 40px; }
+        /* Barre du haut */
+        header { background: #202020; padding: 15px; display: flex; gap: 15px; align-items: center; border-bottom: 2px solid #333; }
+        input, button { padding: 8px 15px; border-radius: 4px; border: none; font-size: 14px; }
+        input { background: #333; color: white; flex-grow: 1; }
+        button { cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-run { background: #27ae60; color: white; }
+        .btn-save { background: #2980b9; color: white; }
+        button:hover { opacity: 0.8; }
 
-        /* --- MESSAGERIE --- */
-        #userList { width: 260px; background-color: #111; border-right: 1px solid #333; display: flex; flex-direction: column; }
-        .search-area { padding: 15px; border-bottom: 1px solid #222; display: flex; gap: 5px; }
-        .search-area input { background: #222; border: 1px solid #333; color: white; padding: 8px; border-radius: 5px; flex-grow: 1; font-size: 0.8em; }
-        .search-area button { background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; padding: 0 10px; }
+        /* Zone Principale */
+        #main { display: flex; flex: 1; overflow: hidden; }
         
-        #contacts-list { flex-grow: 1; overflow-y: auto; }
-        .user-item { padding: 15px 20px; border-bottom: 1px solid #222; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .user-item:hover { background: #222; }
-        .delete-friend { color: #ff3b30; font-size: 0.8em; padding: 5px; }
+        /* Éditeur */
+        #editor-container { width: 40%; display: flex; flex-direction: column; border-right: 2px solid #333; }
+        textarea { flex: 1; background: #1e1e1e; color: #9cdcfe; font-family: 'Consolas', monospace; padding: 15px; resize: none; border: none; outline: none; line-height: 1.5; }
 
-        #messaging-main { flex-grow: 1; display: flex; flex-direction: column; background-color: #000; }
-        #chat-header { padding: 15px 20px; background: #111; border-bottom: 1px solid #333; display: flex; justify-content: space-between; }
-        #messages-box { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .bubble { padding: 10px 15px; border-radius: 18px; max-width: 70%; word-wrap: break-word; }
-        .mine { align-self: flex-end; background: #007aff; border-bottom-right-radius: 4px; }
-        .theirs { align-self: flex-start; background: #262629; border-bottom-left-radius: 4px; }
-
-        .input-area { padding: 15px; background: #111; display: flex; gap: 10px; }
-        .input-area input { flex-grow: 1; padding: 12px; border-radius: 20px; border: none; background: #222; color: white; outline: none; }
+        /* Rendu du jeu */
+        #game-view { width: 60%; background: #000; display: flex; flex-direction: column; position: relative; }
+        #phaser-app { flex: 1; display: flex; align-items: center; justify-content: center; }
         
-        @media (max-width: 600px) { #userList { width: 100px; } .search-area { flex-direction: column; } .nick-label { font-size: 0.7em; } }
+        /* Liste des projets sauvegardés */
+        #project-list { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; max-height: 150px; overflow-y: auto; font-size: 12px; }
     </style>
 </head>
 <body>
 
-    <div id="calculator" class="container">
-        <input type="text" id="calculatorInput" readonly value="0">
-        <div class="calc-grid">
-            <button class="btn special" onclick="clearCalc()">AC</button>
-            <button class="btn special" onclick="deleteLast()">⌫</button>
-            <button class="btn special" onclick="addOp('%')">%</button>
-            <button class="btn op" onclick="addOp('/')">÷</button>
-            <button class="btn num" onclick="addNum('7')">7</button><button class="btn num" onclick="addNum('8')">8</button><button class="btn num" onclick="addNum('9')">9</button><button class="btn op" onclick="addOp('*')">×</button>
-            <button class="btn num" onclick="addNum('4')">4</button><button class="btn num" onclick="addNum('5')">5</button><button class="btn num" onclick="addNum('6')">6</button><button class="btn op" onclick="addOp('-')">−</button>
-            <button class="btn num" onclick="addNum('1')">1</button><button class="btn num" onclick="addNum('2')">2</button><button class="btn num" onclick="addNum('3')">3</button><button class="btn op" onclick="addOp('+')">+</button>
-            <button class="btn num zero" onclick="addNum('0')">0</button><button class="btn num" onclick="addNum('.')">.</button>
-            <button class="btn op" onclick="calculate()">=</button>
+<header>
+    <span style="font-weight: bold; color: #e74c3c;">GameMaker JS</span>
+    <input type="text" id="project-name" placeholder="Nom de ton nouveau projet...">
+    <button class="btn-run" onclick="runGame()">▶ VOIR LE RÉSULTAT</button>
+    <button class="btn-save" onclick="saveToCloud()">💾 SAUVEGARDER</button>
+</header>
+
+<div id="main">
+    <div id="editor-container">
+        <textarea id="code-editor" spellcheck="false">// Bienvenue !
+// Appuie sur "VOIR LE RÉSULTAT" pour tester.
+
+this.add.text(200, 250, "Mon super jeu !", { fontSize: '40px', fill: '#fff' });
+
+const player = this.add.circle(400, 400, 30, 0x00ff00);
+// Tu peux ajouter de la logique ici...</textarea>
+    </div>
+
+    <div id="game-view">
+        <div id="phaser-app"></div>
+        <div id="project-list">
+            <strong>Tes projets :</strong>
+            <div id="list-items"></div>
         </div>
     </div>
+</div>
 
-    <div id="login" class="container" style="background: #1c1c1e;">
-        <h2>Accès</h2>
-        <input type="text" id="loginUser" placeholder="Utilisateur" style="width:85%; padding:10px; background:#333; color:white; border:none; border-radius:8px;"><br><br>
-        <input type="password" id="loginPass" placeholder="Mot de passe" style="width:85%; padding:10px; background:#333; color:white; border:none; border-radius:8px;"><br><br>
-        <button onclick="login()" style="width:90%; background:#ff9f0a; padding:12px; border:none; border-radius:8px; color:white; font-weight:bold;">Entrer</button>
-        <p style="font-size:0.8em; margin-top:10px;">Pas de compte ? <a href="#" onclick="showSignup()" style="color:#ff9f0a;">S'inscrire</a></p>
-    </div>
+<script>
+    let game = null;
 
-    <div id="signup" class="container" style="background: #1c1c1e;">
-        <h2>S'inscrire</h2>
-        <input type="text" id="signUser" placeholder="Pseudo" style="width:85%; padding:10px; background:#333; color:white; border:none; border-radius:8px;"><br><br>
-        <input type="password" id="signPass" placeholder="Mot de passe" style="width:85%; padding:10px; background:#333; color:white; border:none; border-radius:8px;"><br><br>
-        <button onclick="signup()" style="width:90%; background:#28a745; padding:12px; border:none; border-radius:8px; color:white; font-weight:bold;">Créer</button>
-    </div>
-
-    <div id="messaging" class="app-container">
-        <div id="userList">
-            <div class="search-area">
-                <input type="text" id="friendSearch" placeholder="Chercher pseudo...">
-                <button onclick="addFriend()">+</button>
-            </div>
-            <div id="contacts-list"></div>
-            <button onclick="location.reload()" style="background:transparent; color:#444; border:none; padding:10px; cursor:pointer; font-size:0.7em;">DECONNEXION</button>
-        </div>
-        <div id="messaging-main">
-            <div id="chat-header">
-                <b id="active-chat-name">Messagerie</b>
-                <button onclick="clearChat()" style="background:transparent; color:#ff3b30; border:none; cursor:pointer; font-size:0.8em;">Vider</button>
-            </div>
-            <div id="messages-box"></div>
-            <div class="input-area">
-                <input type="text" id="msgInput" placeholder="Message..." onkeypress="if(event.key==='Enter') send()">
-                <button onclick="send()" style="background: #007aff; color:white; border:none; border-radius:50%; width:40px; height:40px;">↑</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let currentUser = null, targetUser = null;
-        let db_messages = JSON.parse(localStorage.getItem('secret_chat_msgs')) || {};
-        let db_nicks = JSON.parse(localStorage.getItem('secret_chat_nicks')) || {};
-        let db_friends = JSON.parse(localStorage.getItem('secret_chat_friends')) || [];
-
-        const calcDisplay = document.getElementById('calculatorInput');
-
-        // CALCULE
-        function addNum(n) { if(calcDisplay.value === "0") calcDisplay.value = n; else calcDisplay.value += n; }
-        function addOp(o) { calcDisplay.value += o; }
-        function clearCalc() { calcDisplay.value = "0"; }
-        function deleteLast() { calcDisplay.value = calcDisplay.value.slice(0, -1) || "0"; }
-        function calculate() {
-            if(calcDisplay.value === "5624") { showLogin(); return; }
-            try { calcDisplay.value = eval(calcDisplay.value.replace('×', '*').replace('÷', '/')); } 
-            catch { calcDisplay.value = "Error"; setTimeout(clearCalc, 1000); }
+    // --- LOGIQUE DU MOTEUR DE JEU ---
+    function runGame() {
+        if (game) {
+            game.destroy(true);
+            document.getElementById('phaser-app').innerHTML = '';
         }
 
-        // NAV
-        function hideAll() { document.querySelectorAll('.container, .app-container').forEach(e => e.style.display='none'); }
-        function showLogin() { hideAll(); document.getElementById('login').style.display='block'; }
-        function showSignup() { hideAll(); document.getElementById('signup').style.display='block'; }
-        function showApp() { hideAll(); document.getElementById('messaging').style.display='flex'; renderContacts(); }
-
-        // FRIENDS LOGIQUE
-        function addFriend() {
-            let name = document.getElementById('friendSearch').value.trim();
-            if(name && !db_friends.includes(name)) {
-                db_friends.push(name);
-                localStorage.setItem('secret_chat_friends', JSON.stringify(db_friends));
-                document.getElementById('friendSearch').value = "";
-                renderContacts();
+        const userCode = document.getElementById('code-editor').value;
+        const config = {
+            type: Phaser.AUTO,
+            width: 800, height: 600,
+            parent: 'phaser-app',
+            backgroundColor: '#2d3436',
+            scene: {
+                create: function() {
+                    try {
+                        const script = new Function(userCode);
+                        script.call(this);
+                    } catch (e) {
+                        console.error(e);
+                        this.add.text(10, 10, "ERREUR CODE: " + e.message, { fill: '#ff0000' });
+                    }
+                }
             }
-        }
+        };
+        game = new Phaser.Game(config);
+    }
 
-        function removeFriend(name) {
-            db_friends = db_friends.filter(f => f !== name);
-            localStorage.setItem('secret_chat_friends', JSON.stringify(db_friends));
-            renderContacts();
-        }
+    // --- LOGIQUE DE SAUVEGARDE (LocalStorage) ---
+    function saveToCloud() {
+        const name = document.getElementById('project-name').value;
+        const code = document.getElementById('code-editor').value;
 
-        function renderContacts() {
-            const container = document.getElementById('contacts-list');
-            container.innerHTML = db_friends.map(u => `
-                <div class="user-item">
-                    <span onclick="selectChat('${u}')" class="nick-label" style="flex-grow:1;">👤 ${db_nicks[u] || u}</span>
-                    <span onclick="removeFriend('${u}')" class="delete-friend">✕</span>
-                </div>
-            `).join('');
-        }
+        if (!name) return alert("Donne un nom à ton projet !");
 
-        function selectChat(u) {
-            targetUser = u;
-            document.getElementById('active-chat-name').innerText = db_nicks[u] || u;
-            loadMessages();
-        }
+        // On récupère la liste existante ou on crée un tableau vide
+        let allProjects = JSON.parse(localStorage.getItem('my_games') || "[]");
 
-        function loadMessages() {
-            const box = document.getElementById('messages-box');
-            if(!targetUser) return;
-            box.innerHTML = (db_messages[targetUser] || []).map(m => `
-                <div class="bubble ${m.sender === currentUser ? 'mine' : 'theirs'}">${m.text}</div>
-            `).join('');
-            box.scrollTop = box.scrollHeight;
-        }
+        // On ajoute le nouveau projet
+        const newProject = { name, code, id: Date.now() };
+        allProjects.push(newProject);
 
-        function send() {
-            let input = document.getElementById('msgInput');
-            if(input.value.trim() && targetUser) {
-                if(!db_messages[targetUser]) db_messages[targetUser] = [];
-                db_messages[targetUser].push({ sender: currentUser, text: input.value.trim() });
-                localStorage.setItem('secret_chat_msgs', JSON.stringify(db_messages));
-                input.value = ""; loadMessages();
-            }
-        }
+        // On enregistre tout
+        localStorage.setItem('my_games', JSON.stringify(allProjects));
+        
+        alert("Projet enregistré avec succès !");
+        updateProjectList();
+    }
 
-        function clearChat() {
-            if(targetUser && confirm("Vider le chat ?")) {
-                db_messages[targetUser] = [];
-                localStorage.setItem('secret_chat_msgs', JSON.stringify(db_messages));
-                loadMessages();
-            }
-        }
+    function updateProjectList() {
+        const listDiv = document.getElementById('list-items');
+        const allProjects = JSON.parse(localStorage.getItem('my_games') || "[]");
+        
+        listDiv.innerHTML = allProjects.map(p => 
+            `<div style="margin-top:5px; cursor:pointer; color:#3498db;" onclick="loadProject(${p.id})">📁 ${p.name}</div>`
+        ).join('');
+    }
 
-        function signup() {
-            let u = document.getElementById('signUser').value.trim();
-            let p = document.getElementById('signPass').value.trim();
-            if(u && p) { localStorage.setItem('auth_'+u, p); alert("Inscrit !"); showLogin(); }
+    function loadProject(id) {
+        const allProjects = JSON.parse(localStorage.getItem('my_games') || "[]");
+        const p = allProjects.find(item => item.id === id);
+        if (p) {
+            document.getElementById('project-name').value = p.name;
+            document.getElementById('code-editor').value = p.code;
+            runGame(); // On lance le projet chargé automatiquement
         }
+    }
 
-        function login() {
-            let u = document.getElementById('loginUser').value.trim();
-            let p = document.getElementById('loginPass').value.trim();
-            if(localStorage.getItem('auth_'+u) === p) { currentUser = u; showApp(); }
-            else alert("Identifiants incorrects");
-        }
-    </script>
+    // Charger la liste au démarrage
+    updateProjectList();
+</script>
+
 </body>
 </html>
