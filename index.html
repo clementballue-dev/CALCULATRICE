@@ -2,106 +2,129 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Editeur de Jeu Pro</title>
+    <title>Studio de Jeu</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser-arcade-physics.min.js"></script>
     <style>
-        :root { --primary: #2563eb; --bg: #f8fafc; --border: #e2e8f0; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); height: 100vh; display: flex; flex-direction: column; }
+        :root { 
+            --bg-soft: #f4f4f2; /* Blanc cassé moins pétant */
+            --accent: #2d3436; 
+            --border: #dcdcdc;
+        }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            margin: 0; 
+            background: var(--bg-soft); 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+        }
         
-        /* Barre d'outils supérieure */
-        header { background: white; padding: 10px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .logo { font-weight: bold; color: var(--primary); font-size: 1.2rem; margin-right: 20px; }
+        /* Barre du haut simplifiée */
+        header { 
+            background: white; 
+            padding: 10px 20px; 
+            border-bottom: 1px solid var(--border); 
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+        }
         
-        input[type="text"] { border: 1px solid var(--border); padding: 8px; border-radius: 6px; width: 200px; }
-        button { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; }
-        button.secondary { background: #64748b; }
-        .btn-run { background: #10b981; font-weight: bold; }
+        .logo { font-weight: bold; color: var(--accent); margin-right: 15px; }
+        input { border: 1px solid var(--border); padding: 8px; border-radius: 4px; outline: none; }
+        
+        button { 
+            background: white; 
+            border: 1px solid var(--accent); 
+            padding: 8px 15px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 13px;
+            transition: 0.2s;
+        }
+        button:hover { background: var(--accent); color: white; }
+        .btn-run { background: #2ecc71; border-color: #27ae60; color: white; font-weight: bold; }
+        .btn-run:hover { background: #27ae60; }
 
-        /* Contenu Principal */
-        main { display: flex; flex: 1; overflow: hidden; padding: 20px; gap: 20px; }
-        
-        /* Colonne de gauche (Code) */
-        .editor-section { flex: 1; display: flex; flex-direction: column; gap: 10px; }
-        textarea { flex: 1; border: 1px solid var(--border); border-radius: 8px; padding: 15px; font-family: 'Consolas', monospace; font-size: 14px; outline: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
-        
-        /* Colonne de droite (Jeu & Assets) */
-        .preview-section { flex: 1; display: flex; flex-direction: column; gap: 10px; }
-        #game-container { background: white; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; height: 450px; display: flex; align-items: center; justify-content: center; position: relative; }
-        
-        /* Zone d'importation */
-        .assets-manager { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 15px; }
-        .file-list { margin-top: 10px; font-size: 0.9rem; color: #64748b; }
+        /* Zone de travail */
+        main { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; }
+
+        /* Éditeur flottant (Masqué par défaut) */
+        #editor-wrapper {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            display: none; /* Caché au début */
+            flex-direction: column;
+            width: 400px;
+            height: 500px;
+            background: white;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        textarea { 
+            flex: 1; 
+            padding: 15px; 
+            border: none; 
+            resize: none; 
+            outline: none; 
+            font-family: monospace;
+            background: #fafafa;
+        }
+
+        /* Container du Jeu */
+        #game-container { width: 100%; height: 100%; }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="logo">GameBuilder Pro</div>
-    <input type="text" id="proj-name" placeholder="Nom du projet...">
-    <button class="btn-run" onclick="runGame()">▶ LANCER LE JEU</button>
-    <button class="secondary" onclick="saveGame()">💾 Sauvegarder</button>
-    <div style="margin-left: auto;">
-        <input type="file" id="file-input" style="display:none" onchange="handleFileUpload(this)">
-        <button class="secondary" onclick="document.getElementById('file-input').click()">➕ Importer Image/Son</button>
-    </div>
+    <div class="logo">BUILDER PRO</div>
+    <input type="text" id="proj-name" placeholder="Nom du projet">
+    <button onclick="toggleEditor()">📝 ÉCRIRE LE CODE</button>
+    <button onclick="document.getElementById('file-input').click()">📁 IMPORTER ASSET</button>
+    <button class="btn-run" onclick="runGame()">▶ LANCER LE RÉSULTAT</button>
+    <input type="file" id="file-input" style="display:none" onchange="handleFileUpload(this)">
 </header>
 
 <main>
-    <section class="editor-section">
-        <div style="display:flex; justify-content: space-between; align-items: center;">
-            <label>Éditeur de Script :</label>
-            <small id="status" style="color: #10b981;"></small>
-        </div>
-        <textarea id="code-editor" spellcheck="false">
-// EXEMPLE :
-// Pour afficher une image importée, utilisez son nom.
-this.add.text(20, 20, "Prêt à créer !", {fill: '#000'});
-        </textarea>
-    </section>
+    <div id="editor-wrapper">
+        <div style="padding: 10px; border-bottom: 1px solid var(--border); font-size: 12px; font-weight: bold;">ÉDITEUR JS</div>
+        <textarea id="code-editor" placeholder="Tapez votre code ici...">// Exemple :
+this.add.circle(400, 300, 50, 0x2d3436);</textarea>
+    </div>
 
-    <section class="preview-section">
-        <label>Rendu du Jeu :</label>
-        <div id="game-container">
-            <div id="phaser-app"></div>
-        </div>
-        
-        <div class="assets-manager">
-            <strong>Gestionnaire d'Assets</strong>
-            <div id="asset-list" class="file-list">Aucun fichier importé.</div>
-        </div>
-    </section>
+    <div id="game-container">
+        <div id="phaser-app"></div>
+    </div>
 </main>
 
 <script>
     let game = null;
-    let assets = []; // Stockage des noms et données des fichiers
+    let assets = [];
 
-    // 1. GESTION DES FICHIERS (IMAGES/SONS)
+    // Afficher ou masquer l'éditeur
+    function toggleEditor() {
+        const ed = document.getElementById('editor-wrapper');
+        ed.style.display = (ed.style.display === 'none' || ed.style.display === '') ? 'flex' : 'none';
+    }
+
     function handleFileUpload(input) {
         const file = input.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = function(e) {
-                const assetName = file.name.split('.')[0].replace(/\s/g, '_');
-                assets.push({ name: assetName, data: e.target.result, type: file.type });
-                updateAssetList();
-                
-                // On aide l'utilisateur en ajoutant le code pour lui
-                const editor = document.getElementById('code-editor');
-                if(file.type.includes('image')) {
-                    editor.value += `\nthis.add.image(400, 300, '${assetName}');`;
-                }
+            reader.onload = (e) => {
+                const name = file.name.split('.')[0].replace(/\s/g, '_');
+                assets.push({ name, data: e.target.result, type: file.type });
+                alert("Asset '" + name + "' importé !");
+                // On ouvre l'éditeur pour qu'il puisse coder avec
+                document.getElementById('editor-wrapper').style.display = 'flex';
             };
             reader.readAsDataURL(file);
         }
     }
 
-    function updateAssetList() {
-        const list = document.getElementById('asset-list');
-        list.innerHTML = assets.map(a => `<div>✅ Fichier prêt : <b>${a.name}</b></div>`).join('');
-    }
-
-    // 2. LANCEMENT DU JEU
     function runGame() {
         if (game) { game.destroy(true); document.getElementById('phaser-app').innerHTML = ''; }
 
@@ -109,39 +132,27 @@ this.add.text(20, 20, "Prêt à créer !", {fill: '#000'});
 
         const config = {
             type: Phaser.AUTO,
-            width: 800, height: 600,
+            width: window.innerWidth,
+            height: window.innerHeight - 60,
             parent: 'phaser-app',
-            backgroundColor: '#ffffff', // Fond blanc pour le jeu aussi
+            backgroundColor: '#f4f4f2',
             scene: {
                 preload: function() {
-                    // On charge dynamiquement les images importées par l'utilisateur
-                    assets.forEach(asset => {
-                        if(asset.type.includes('image')) this.load.image(asset.name, asset.data);
-                        if(asset.type.includes('audio')) this.load.audio(asset.name, asset.data);
+                    assets.forEach(a => {
+                        if(a.type.includes('image')) this.load.image(a.name, a.data);
                     });
                 },
                 create: function() {
                     try {
-                        const script = new Function(userCode);
-                        script.call(this);
-                    } catch (e) {
-                        this.add.text(10, 10, "Erreur: " + e.message, { fill: '#ff0000' });
-                    }
+                        const fn = new Function(userCode);
+                        fn.call(this);
+                    } catch (e) { console.error(e); }
                 }
             }
         };
         game = new Phaser.Game(config);
-    }
-
-    // 3. SAUVEGARDE
-    function saveGame() {
-        const name = document.getElementById('proj-name').value || "Projet Sans Nom";
-        const code = document.getElementById('code-editor').value;
-        const project = { name, code, assets, id: Date.now() };
-        
-        localStorage.setItem('game_proj_' + name, JSON.stringify(project));
-        document.getElementById('status').innerText = "Sauvegardé à " + new Date().toLocaleTimeString();
-        setTimeout(() => document.getElementById('status').innerText = "", 3000);
+        // On cache l'éditeur pour voir le jeu
+        document.getElementById('editor-wrapper').style.display = 'none';
     }
 </script>
 
