@@ -2,58 +2,77 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>TERRARIA : LIGHT & STEEL</title>
+    <title>2DCraft - Ultimate Edition</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body { margin: 0; background: #000; overflow: hidden; touch-action: none; font-family: 'Segoe UI', sans-serif; color: white; }
+        body { margin: 0; background: #000; overflow: hidden; touch-action: none; font-family: 'Verdana', sans-serif; color: white; }
         canvas { display: none; image-rendering: pixelated; width: 100vw; height: 100vh; }
         
-        #menu { position: absolute; width: 100%; height: 100%; background: #111; display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .box { background: #222; padding: 30px; border-radius: 15px; border: 2px solid #ffab40; text-align: center; width: 300px; }
+        /* --- MENU --- */
+        #menu { position: absolute; width: 100%; height: 100%; background: linear-gradient(#4facfe, #00f2fe); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .box { background: rgba(0,0,0,0.8); padding: 40px; border-radius: 20px; border: 3px solid #fff; text-align: center; width: 320px; }
         
+        /* --- UI JEU --- */
         #ui { display: none; pointer-events: none; position: absolute; width: 100%; height: 100%; }
-        #stats { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 8px; border-left: 4px solid #ffab40; }
-        #hp-bar { width: 150px; height: 10px; background: #333; margin: 5px 0; border-radius: 5px; overflow: hidden; }
-        #hp-fill { width: 100%; height: 100%; background: #ff4444; }
+        #stats { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); padding: 12px; border-radius: 10px; border-left: 5px solid #ffab40; }
+        #hp-bar { width: 180px; height: 12px; background: #333; border-radius: 6px; overflow: hidden; }
+        #hp-fill { width: 100%; height: 100%; background: #ff4444; transition: 0.3s; }
         
-        #craft { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.9); padding: 12px; border-radius: 8px; pointer-events: auto; max-height: 85vh; overflow-y: auto; width: 200px; border: 1px solid #444; }
-        .recipe-cat { font-size: 10px; color: #ffab40; font-weight: bold; margin-top: 8px; text-transform: uppercase; }
-        .recipe { background: #333; padding: 5px; margin: 3px 0; border-radius: 3px; cursor: pointer; font-size: 10px; border: 1px solid #444; }
-        .recipe:hover { border-color: #fff; }
+        #craft { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.85); padding: 15px; border-radius: 10px; pointer-events: auto; max-height: 85vh; overflow-y: auto; width: 220px; border: 1px solid #ffab40; }
+        .recipe { background: #333; padding: 6px; margin: 4px 0; border-radius: 4px; cursor: pointer; font-size: 11px; border-bottom: 2px solid #111; }
+        .recipe:hover { background: #444; border-color: #fff; }
 
-        #hotbar { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; pointer-events: auto; }
-        .slot { width: 50px; height: 55px; background: rgba(0,0,0,0.8); border: 2px solid #444; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 8px; }
-        .slot.active { border-color: #ffab40; background: rgba(255,171,64,0.2); }
+        #boss-ui { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 300px; display: none; text-align: center; }
+        #boss-bar { width: 100%; height: 15px; background: #222; border: 2px solid red; }
+        #boss-fill { width: 100%; height: 100%; background: red; }
+
+        #hotbar { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; pointer-events: auto; }
+        .slot { width: 55px; height: 60px; background: rgba(0,0,0,0.8); border: 3px solid #666; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; text-align: center; }
+        .slot.active { border-color: #ffab40; background: rgba(255,171,64,0.3); }
+
+        /* CONTROLES MOBILE */
+        #ctrl-mobile { position: absolute; bottom: 40px; width: 100%; display: none; pointer-events: none; }
+        #joystick { position: absolute; left: 40px; bottom: 10px; width: 110px; height: 110px; background: rgba(255,255,255,0.1); border-radius: 50%; pointer-events: auto; }
+        #knob { position: absolute; top: 30px; left: 30px; width: 50px; height: 50px; background: #fff; border-radius: 50%; }
+        #jump-btn { position: absolute; right: 40px; bottom: 10px; width: 90px; height: 90px; background: rgba(255,255,255,0.1); border: 2px solid #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; pointer-events: auto; }
+        @media (pointer: coarse) { #ctrl-mobile { display: block; } }
     </style>
 </head>
 <body>
 
     <div id="menu">
         <div class="box">
-            <h1 style="color:#ffab40">FORGE & LUMIÈRE</h1>
-            <input type="text" id="p-input" placeholder="Pseudo..." style="padding:10px; width:80%; margin-bottom:15px; background:#111; color:white; border:1px solid #444;">
-            <button onclick="init()" style="padding:10px 20px; background:#ffab40; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">REJOINDRE</button>
+            <h1 style="color:#ffab40; margin:0; font-size:45px; text-shadow: 3px 3px #000;">2DCraft</h1>
+            <p style="margin-bottom:20px;">Survie • Boss • Backrooms • Multi</p>
+            <input type="text" id="p-input" placeholder="Ton Pseudo..." maxlength="12" style="padding:12px; width:85%; border-radius:8px; border:none; font-size:16px;">
+            <button onclick="init()" style="margin-top:20px; padding:15px; background:#4ade80; border:none; border-radius:10px; font-size:18px; font-weight:bold; cursor:pointer; width:100%; color:white;">ENTRER DANS LE MONDE</button>
         </div>
     </div>
 
     <div id="ui">
+        <div id="boss-ui">
+            <b style="color:red; text-shadow: 2px 2px #000;">LE NEIGHBOR</b>
+            <div id="boss-bar"><div id="boss-fill"></div></div>
+        </div>
         <div id="stats">
-            <b id="p-name">Joueur</b>
+            <b id="p-name" style="color:#ffab40; font-size:16px;">Héros</b>
             <div id="hp-bar"><div id="hp-fill"></div></div>
-            <div id="inv-txt" style="font-size:10px; color:#aaa;"></div>
+            <div id="inv-txt" style="font-size:11px; margin-top:8px; color:#ddd;"></div>
+            <div id="def-txt" style="font-size:10px; color:#4ade80;">Défense: 0</div>
         </div>
         <div id="craft">
-            <div class="recipe-cat">Consommables</div>
-            <div class="recipe" onclick="craftItem('torch')">Torche x4 (1 Bois)</div>
-            <div class="recipe" onclick="craftItem('stick')">Bâton x4 (1 Bois)</div>
-            <div id="armor-recipes"></div>
-            <div id="tool-recipes"></div>
+            <b style="color:#ffab40; font-size:13px;">FORGE 2DCRAFT</b>
+            <div id="recipe-list"></div>
         </div>
         <div id="hotbar">
-            <div class="slot active" id="s1" onclick="sel(1)">ÉPÉE</div>
-            <div class="slot" id="s2" onclick="sel(2)">PIOCHE</div>
-            <div class="slot" id="s3" onclick="sel(3)">TORCHE</div>
+            <div class="slot active" id="s1" onclick="sel(1)">MAIN</div>
+            <div class="slot" id="s2" onclick="sel(2)">VIDE</div>
+            <div class="slot" id="s3" onclick="sel(3)">VIDE</div>
             <div class="slot" id="s4" onclick="sel(4)">ARC</div>
+        </div>
+        <div id="ctrl-mobile">
+            <div id="joystick"><div id="knob"></div></div>
+            <div id="jump-btn">SAUT</div>
         </div>
     </div>
 
@@ -61,185 +80,182 @@
 
 <script>
 const cvs = document.getElementById('cvs'), ctx = cvs.getContext('2d');
-let world = [], torches = [], lastT = 0, activeS = 1, keys = {};
-const TILE = 32, ROWS = 60, COLS = 100;
+let world = [], torches = [], lastT = 0, activeS = 1, keys = {}, joyX = 0, otherPlayers = [];
+let boss = null, inBackrooms = false, jumpCount = 0;
+const TILE = 32, ROWS = 65, COLS = 130;
 
-let p = { x: 1500, y: 800, w: 20, h: 36, vx: 0, vy: 0, hp: 100, def: 0, grounded: false };
-let inv = { bois: 20, pierre: 10, fer: 0, palladium: 0, batons: 10, torches: 5, fleches: 10 };
+let p = { x: 2000, y: 800, w: 24, h: 42, vx: 0, vy: 0, hp: 100, def: 0, grounded: false, name: "" };
+let inv = { bois: 0, pierre: 0, fer: 0, or: 0, palladium: 0, batons: 0, torches: 0, fleches: 10 };
 let armor = { Casque:null, Plastron:null, Jambieres:null, Bottes:null };
-let tools = { 
-    1: {t:'Épée', m:'bois', p:10}, 
-    2: {t:'Pioche', m:'bois', p:1},
-    3: {t:'Torche', m:'stick', p:0}
-};
+let tools = { 1:{t:'Main', m:'chair', p:1} };
 
-const COLORS = { bois:"#795548", pierre:"#90a4ae", fer:"#cfd8dc", palladium:"#ff4d00", base:"#00d4ff" };
+const COLORS = { bois:"#795548", pierre:"#90a4ae", fer:"#cfd8dc", or:"#ffd700", palladium:"#ff4d00", base:"#00d4ff" };
 
 function init() {
-    p.name = document.getElementById('p-input').value || "Héros";
+    p.name = document.getElementById('p-input').value || "Terrarian";
     document.getElementById('menu').style.display = 'none';
     document.getElementById('ui').style.display = 'block';
     cvs.style.display = 'block';
+    document.getElementById('p-name').innerText = "👤 " + p.name;
     
-    // Génération
+    // Génération du Monde
     for(let y=0; y<ROWS; y++) {
         world[y] = [];
         for(let x=0; x<COLS; x++) {
-            let id = (y > 30) ? 3 : (y === 30 ? 1 : 0);
-            if(y > 35 && Math.random() < 0.08) id = 5;
-            if(y > 55 && Math.random() < 0.15) id = 9;
+            let id = 0;
+            if(y === 35) id = 1; // Herbe
+            else if(y > 35 && y < 40) id = 2; // Terre
+            else if(y >= 40) {
+                id = 3; let r = Math.random();
+                if(r < 0.06) id = 5; // Fer
+                if(r < 0.02) id = 6; // Or
+                if(y > 58 && r < 0.15) id = 9; // Palla
+            }
+            if(y < 35 && y > 30 && x % 12 === 0) id = 10; // Arbres
             world[y][x] = id;
         }
     }
-    buildCraftMenu();
+    // Simulation Crossplay
+    otherPlayers.push({x: 2200, y: 800, name: "Joueur_Mobile", mat:'fer'});
+
+    buildCraft();
     requestAnimationFrame(loop);
 }
 
-function buildCraftMenu() {
-    const tList = document.getElementById('tool-recipes');
-    const aList = document.getElementById('armor-recipes');
-    const mats = ['pierre', 'fer', 'palladium'];
+function buildCraft() {
+    const list = document.getElementById('recipe-list');
+    const mats = ['bois', 'pierre', 'fer', 'palladium'];
+    const pcs = ['Casque', 'Plastron', 'Bottes'];
     
-    tList.innerHTML = '<div class="recipe-cat">Outils</div>';
+    list.innerHTML = `<div class="recipe" onclick="craftItem('torch')">Torches x4 (1 Bois)</div>`;
     mats.forEach(m => {
-        ['Épée', 'Pioche'].forEach(type => {
-            let d = document.createElement('div'); d.className = 'recipe';
-            d.innerText = `${type} en ${m}`;
-            d.onclick = () => craftTool(type, m);
-            tList.appendChild(d);
-        });
-    });
-
-    aList.innerHTML = '<div class="recipe-cat">Armures</div>';
-    ['Casque', 'Plastron', 'Jambieres', 'Bottes'].forEach(pc => {
-        mats.forEach(m => {
-            let d = document.createElement('div'); d.className = 'recipe';
-            d.innerText = `${pc} ${m}`;
-            d.onclick = () => craftArmor(pc, m);
-            aList.appendChild(d);
+        let d = document.createElement('div'); d.className = 'recipe';
+        d.innerText = `Pioche ${m.toUpperCase()}`;
+        d.onclick = () => { if(inv[m]>=3){ inv[m]-=3; tools[2]={t:'Pioche', m:m}; updateUI(); }};
+        list.appendChild(d);
+        pcs.forEach(pc => {
+            let a = document.createElement('div'); a.className = 'recipe';
+            a.innerText = `${pc} ${m.toUpperCase()}`;
+            a.onclick = () => {
+                let cost = pc === 'Plastron' ? 7 : 5;
+                if(inv[m] >= cost) { inv[m]-=cost; armor[pc]={mat:m, def:cost*2}; calcDef(); updateUI(); }
+            };
+            list.appendChild(a);
         });
     });
 }
 
-function craftItem(type) {
-    if(type==='stick' && inv.bois >= 1) { inv.bois--; inv.batons += 4; }
-    if(type==='torch' && inv.bois >= 1) { inv.bois--; inv.torches += 4; }
-    updateUI();
-}
-
-function craftTool(type, m) {
-    const cost = (type === 'Épée') ? 2 : 3;
-    const power = { pierre: 2, fer: 5, palladium: 15 };
-    if(inv[m] >= cost && inv.batons >= 2) {
-        inv[m] -= cost; inv.batons -= 2;
-        let slot = (type === 'Épée') ? 1 : 2;
-        tools[slot] = { t:type, m:m, p:power[m] };
-        updateUI();
-    }
-}
-
-function craftArmor(pc, m) {
-    const costs = { Bottes:4, Jambieres:5, Casque:5, Plastron:7 };
-    const defs = { pierre:2, fer:8, palladium:20 };
-    if(inv[m] >= costs[pc]) {
-        inv[m] -= costs[pc];
-        armor[pc] = { mat:m, def:defs[m] };
-        p.def = Object.values(armor).reduce((s, a) => s + (a?a.def:0), 0);
-        updateUI();
-    }
-}
+function craftItem(t) { if(t==='torch' && inv.bois>=1){ inv.bois--; inv.torches+=4; updateUI(); }}
+function calcDef() { p.def = Object.values(armor).reduce((s, a) => s + (a?a.def:0), 0); }
 
 function loop(t) {
-    let dt = (t - lastT) / 1000; lastT = t;
-    if(dt > 0.1) dt = 0.016;
-
-    let mv = (keys.d?1:0) - (keys.q?1:0);
-    p.vx = mv * 300; p.vy += 1500 * dt;
+    let dt = Math.min((t - lastT) / 1000, 0.1); lastT = t;
+    let mv = joyX || (keys['d']?1:keys['q']?-1:0);
+    p.vx = mv * 320; p.vy += 1600 * dt;
     p.x += p.vx * dt; p.y += p.vy * dt;
 
     let gx = Math.floor(p.x/TILE), gy = Math.floor((p.y+p.h)/TILE);
     if(world[gy]?.[gx] > 0) { p.y = gy*TILE - p.h; p.vy = 0; p.grounded = true; } else p.grounded = false;
 
-    draw();
-    requestAnimationFrame(loop);
+    // Backrooms
+    if(!inBackrooms && gy >= ROWS-2 && jumpCount >= 3) {
+        inBackrooms = true;
+        for(let y=0; y<ROWS; y++) for(let x=0; x<COLS; x++) world[y][x] = Math.random() > 0.9 ? 11 : 0;
+    }
+
+    // Boss Neighbor IA
+    if(boss) {
+        boss.vx = (p.x > boss.x ? 1 : -1) * 200; boss.vy += 1500 * dt;
+        boss.x += boss.vx * dt; boss.y += boss.vy * dt;
+        let bgx = Math.floor(boss.x/TILE), bgy = Math.floor((boss.y+boss.h)/TILE);
+        if(world[bgy]?.[bgx] > 0) { boss.y = bgy*TILE - boss.h; boss.vy = 0; }
+        if(Math.hypot(p.x-boss.x, p.y-boss.y) < 50) {
+            p.hp -= Math.max(5, 40 - (p.def * 0.7)) * dt;
+            if(p.hp <= 0) location.reload();
+        }
+    }
+
+    draw(); updateUI(); requestAnimationFrame(loop);
 }
 
 function draw() {
     let cx = p.x - cvs.width/2, cy = p.y - cvs.height/2;
-    
-    // 1. Fond
-    ctx.fillStyle = "#111"; ctx.fillRect(0,0,cvs.width,cvs.height);
+    ctx.fillStyle = inBackrooms ? "#ceca8d" : "#4facfe"; ctx.fillRect(0,0,cvs.width,cvs.height);
 
-    // 2. Monde
+    // Monde
     for(let y=0; y<ROWS; y++) {
         for(let x=Math.floor(cx/TILE); x<Math.floor((cx+cvs.width)/TILE)+1; x++) {
-            if(world[y]?.[x] > 0) {
-                ctx.fillStyle = {1:"#2d5a27", 3:"#444", 5:"#ddd", 9:"#ff4d00"}[world[y][x]];
+            let id = world[y]?.[x];
+            if(id > 0) {
+                ctx.fillStyle = {1:"#2ecc71", 2:"#795548", 3:"#7f8c8d", 5:"#bdc3c7", 6:"#ffd700", 9:"#e67e22", 10:"#5d4037", 11:"#9e9a5e"}[id];
                 ctx.fillRect(x*TILE-cx, y*TILE-cy, TILE, TILE);
             }
         }
     }
 
-    // 3. Torches posées
-    torches.forEach(tr => {
-        ctx.fillStyle = "#ffab40";
-        ctx.fillRect(tr.x*TILE-cx+12, tr.y*TILE-cy+10, 8, 16);
-    });
+    // Torches & Boss
+    torches.forEach(tr => { ctx.fillStyle = "#ffab40"; ctx.fillRect(tr.x*TILE-cx+12, tr.y*TILE-cy+10, 8, 16); });
+    if(boss) { ctx.fillStyle = "#1a0000"; ctx.fillRect(boss.x-cx, boss.y-cy, 60, 80); }
 
-    // 4. Joueur
+    // Joueur Terraria
     let px = p.x-cx, py = p.y-cy;
-    ctx.fillStyle = COLORS[armor.Plastron?.mat || 'base'];
-    ctx.fillRect(px, py, p.w, p.h);
+    let setMat = armor.Plastron?.mat;
+    if(setMat && Object.values(armor).every(a => a?.mat === setMat)) { ctx.shadowBlur = 15; ctx.shadowColor = COLORS[setMat]; }
+    
+    ctx.fillStyle = "#ffdbac"; ctx.fillRect(px+3, py, 16, 14); // Tête
+    ctx.fillStyle = COLORS[armor.Plastron?.mat || 'base']; ctx.fillRect(px, py+12, 22, 18); // Corps
+    ctx.fillStyle = "#34495e"; ctx.fillRect(px+2, py+30, 18, 12); // Jambes
+    if(armor.Casque) { ctx.fillStyle = COLORS[armor.Casque.mat]; ctx.fillRect(px+1, py-2, 20, 8); }
+    
+    ctx.shadowBlur = 0; ctx.fillStyle = "white"; ctx.font = "bold 10px Arial"; ctx.textAlign = "center";
+    ctx.fillText(p.name, px+p.w/2, py-10);
 
-    // 5. SYSTÈME DE LUMIÈRE (OMBRE PORTÉE)
-    ctx.globalCompositeOperation = 'multiply';
-    let lightGrad = ctx.createRadialGradient(px+10, py+10, 20, px+10, py+10, 150);
-    lightGrad.addColorStop(0, "white");
-    lightGrad.addColorStop(1, "black");
-    
-    // On remplit tout en noir sauf autour du joueur et des torches
-    ctx.fillStyle = "black";
-    ctx.globalAlpha = 0.8; // Niveau d'obscurité
-    ctx.fillRect(0,0,cvs.width,cvs.height);
-    
+    // Lumière RÉELLE
     ctx.globalCompositeOperation = 'destination-out';
-    // Lumière du joueur
-    ctx.beginPath(); ctx.arc(px+10, py+18, 120, 0, Math.PI*2); ctx.fill();
-    // Lumière des torches
-    torches.forEach(tr => {
-        ctx.beginPath(); ctx.arc(tr.x*TILE-cx+16, tr.y*TILE-cy+16, 150, 0, Math.PI*2); ctx.fill();
-    });
+    let g = ctx.createRadialGradient(px+12, py+21, 0, px+12, py+21, 150);
+    g.addColorStop(0, "rgba(255,255,255,1)"); g.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(px+12, py+21, 150, 0, Math.PI*2); ctx.fill();
     
+    torches.forEach(tr => {
+        let tg = ctx.createRadialGradient(tr.x*TILE-cx+16, tr.y*TILE-cy+16, 0, tr.x*TILE-cx+16, tr.y*TILE-cy+16, 200);
+        tg.addColorStop(0, "white"); tg.addColorStop(1, "transparent");
+        ctx.fillStyle = tg; ctx.beginPath(); ctx.arc(tr.x*TILE-cx+16, tr.y*TILE-cy+16, 200, 0, Math.PI*2); ctx.fill();
+    });
     ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = 1.0;
 }
 
 function updateUI() {
     document.getElementById('hp-fill').style.width = p.hp + "%";
-    document.getElementById('inv-txt').innerText = `Bois:${inv.bois} | Fer:${inv.fer} | Palla:${inv.palladium} | Torches:${inv.torches}`;
-    document.getElementById('s1').innerText = `ÉPÉE ${tools[1].m}`;
-    document.getElementById('s2').innerText = `PIOCHE ${tools[2].m}`;
-    document.getElementById('s3').innerText = `TORCHES (${inv.torches})`;
+    document.getElementById('inv-txt').innerText = `Bois: ${inv.bois} | Fer: ${inv.fer} | Palla: ${inv.palladium}`;
+    document.getElementById('def-txt').innerText = `Défense: ${p.def}`;
+    document.getElementById('s1').innerText = tools[1] ? tools[1].t.toUpperCase() : "MAIN";
+    document.getElementById('s2').innerText = tools[2] ? tools[2].t.toUpperCase() : "VIDE";
+    document.getElementById('s3').innerText = inv.torches > 0 ? `TORCHES (${inv.torches})` : "VIDE";
+    if(boss) { document.getElementById('boss-ui').style.display = 'block'; document.getElementById('boss-fill').style.width = (boss.hp/600)*100 + "%"; }
 }
-
-window.onkeydown = e => { keys[e.key.toLowerCase()] = true; if(e.key===' ' && p.grounded) p.vy = -520; };
-window.onkeyup = e => keys[e.key.toLowerCase()] = false;
 
 cvs.onmousedown = e => {
     let cx = p.x-cvs.width/2, cy = p.y-cvs.height/2;
     let mx = e.clientX+cx, my = e.clientY+cy, gx = Math.floor(mx/TILE), gy = Math.floor(my/TILE);
-
-    if(activeS === 2) { // Minage
-        let id = world[gy]?.[gx];
-        if(id === 5) inv.fer++; if(id === 9) inv.palladium++; if(id === 3) inv.pierre++;
-        world[gy][gx] = 0;
+    let id = world[gy]?.[gx];
+    if(id > 0) {
+        if(id===10) inv.bois += 2; if(id===3) inv.pierre++; if(id===5) inv.fer++; if(id===9) {
+            inv.palladium++; // Invocation Neighbor
+            if(world[gy][gx+1]===9 && world[gy][gx+2]===9) { boss = {x:mx, y:my-100, hp:600}; }
+        }
+        world[gy][gx] = 0; 
     }
-    if(activeS === 3 && inv.torches > 0) { // Poser Torche
-        torches.push({x:gx, y:gy});
-        inv.torches--;
-    }
+    if(activeS===3 && inv.torches > 0) { torches.push({x:gx, y:gy}); inv.torches--; }
     updateUI();
 };
+
+window.onkeydown = e => { let k=e.key.toLowerCase(); keys[k]=true; if((k==='z'||k===' ') && p.grounded) { p.vy=-550; jumpCount++; } };
+window.onkeyup = e => keys[e.key.toLowerCase()] = false;
+
+const jstk = document.getElementById('joystick'), knb = document.getElementById('knob');
+jstk.addEventListener('touchmove', e => { let r = jstk.getBoundingClientRect(); joyX = (e.touches[0].clientX - (r.left+55))/55; knb.style.transform = `translateX(${joyX*30}px)`; });
+jstk.addEventListener('touchend', () => { joyX = 0; knb.style.transform = `translateX(0px)`; });
+document.getElementById('jump-btn').addEventListener('touchstart', () => { if(p.grounded) { p.vy=-550; jumpCount++; } });
 
 function sel(n) { activeS = n; document.querySelectorAll('.slot').forEach((s,i)=>s.classList.toggle('active', i+1===n)); }
 cvs.width = window.innerWidth; cvs.height = window.innerHeight;
