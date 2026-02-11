@@ -1,191 +1,264 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Journal Interactif - Réactions</title>
+    <title>Terraria RPG : Ultimate Online</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; background: #f0f2f5; overflow: hidden; }
-        
-        /* Sidebar */
-        #sidebar { width: 260px; background: #1a1a2e; color: white; display: flex; flex-direction: column; flex-shrink: 0; }
-        #sidebar h2 { text-align: center; color: #4cc9f0; padding: 25px; margin: 0; border-bottom: 1px solid #333; }
-        .menu-item { padding: 15px 25px; cursor: pointer; transition: 0.3s; border-left: 4px solid transparent; }
-        .menu-item:hover, .active { background: #252545; border-left: 4px solid #4cc9f0; color: #4cc9f0; }
+        body { margin: 0; background: #000; overflow: hidden; touch-action: none; font-family: 'Segoe UI', sans-serif; color: white; }
+        canvas { display: none; image-rendering: pixelated; width: 100vw; height: 100vh; }
 
-        /* Contenu Principal */
-        #main-wrapper { flex: 1; display: flex; flex-direction: column; }
-        #top-bar { background: white; padding: 15px 40px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
-        #main-content { flex: 1; padding: 20px 40px; overflow-y: auto; }
-
-        /* Zone d'écriture */
-        #editor-zone { display: none; background: white; padding: 20px; border-radius: 12px; margin-bottom: 30px; border: 2px solid #4cc9f0; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .editor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        input, textarea, select { padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
-        textarea { grid-column: span 2; }
-        .publish-btn { grid-column: span 2; background: #4cc9f0; color: #1a1a2e; border: none; padding: 12px; font-weight: bold; cursor: pointer; border-radius: 8px; }
-
-        /* Articles */
-        .news-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; position: relative; }
-        .badge { background: #e0f7fa; color: #00838f; padding: 5px 12px; border-radius: 15px; font-size: 0.8rem; font-weight: bold; }
-        
-        /* Interactions (Votes + Réactions) */
-        .interaction-bar { margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; display: flex; flex-direction: column; gap: 15px; }
-        .stars { color: #ffd700; }
-        .star-btn { background: none; border: none; cursor: pointer; font-size: 1.4rem; color: #ccc; padding: 0; }
-        .star-btn.active { color: #ffd700; }
-
-        .reactions { display: flex; gap: 10px; flex-wrap: wrap; }
-        .react-btn { 
-            background: #f8f9fa; border: 1px solid #ddd; border-radius: 20px; 
-            padding: 5px 12px; cursor: pointer; transition: 0.2s; font-size: 0.9rem;
-            display: flex; align-items: center; gap: 5px;
+        /* --- MENU --- */
+        #main-menu {
+            position: absolute; width: 100%; height: 100%; 
+            background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('https://wallpaperaccess.com/full/1301405.jpg') center/cover;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000;
         }
-        .react-btn:hover { background: #e9ecef; transform: scale(1.05); }
-        .react-btn span { font-weight: bold; color: #1a1a2e; }
+        .menu-box { background: rgba(20,20,20,0.95); padding: 30px; border-radius: 15px; border: 2px solid #00d4ff; text-align: center; width: 320px; box-shadow: 0 0 30px rgba(0,212,255,0.3); }
+        input { padding: 10px; width: 85%; margin: 10px 0; border-radius: 5px; border: 1px solid #444; background: #111; color: white; text-align: center; }
+        .btn-play { padding: 12px; background: #00d4ff; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
+        
+        /* --- UI JEU --- */
+        #game-ui { display: none; pointer-events: none; }
+        #stats-overlay { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 8px; border-left: 4px solid #00d4ff; }
+        #hp-bar { width: 150px; height: 10px; background: #333; margin: 5px 0; border-radius: 5px; overflow: hidden; }
+        #hp-fill { width: 100%; height: 100%; background: #ff4444; }
+        
+        /* Inventaire & Craft */
+        #hotbar { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; pointer-events: auto; }
+        .slot { width: 50px; height: 55px; background: rgba(0,0,0,0.8); border: 2px solid #444; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 8px; cursor: pointer; }
+        .slot.active { border-color: #00d4ff; background: rgba(0,212,255,0.2); }
+        
+        #craft-menu { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 5px; pointer-events: auto; max-height: 80vh; overflow-y: auto; width: 150px; }
+        .recipe { background: #222; padding: 6px; border: 1px solid #444; font-size: 9px; cursor: pointer; }
+        .recipe:hover { border-color: #00d4ff; }
 
-        .delete-btn { position: absolute; top: 20px; right: 20px; background: #ff4d4d; color: white; border: none; border-radius: 5px; cursor: pointer; padding: 5px 10px; }
-        #admin-lock { position: fixed; bottom: 20px; right: 20px; background: #1a1a2e; color: white; border: none; padding: 10px 20px; border-radius: 50px; cursor: pointer; }
+        /* Controls Mobile */
+        #joy-container { position: absolute; bottom: 40px; left: 40px; width: 100px; height: 100px; background: rgba(255,255,255,0.1); border-radius: 50%; display: none; touch-action: none; }
+        #joy-knob { position: absolute; top: 30px; left: 30px; width: 40px; height: 40px; background: rgba(255,255,255,0.4); border-radius: 50%; }
+        #jump-btn { position: absolute; bottom: 50px; right: 40px; width: 70px; height: 70px; background: rgba(255,255,255,0.1); border: 2px solid #fff; border-radius: 50%; display: none; align-items: center; justify-content: center; font-weight: bold; touch-action: none; pointer-events: auto; }
+        
+        @media (pointer: coarse) { #joy-container, #jump-btn { display: flex; } }
     </style>
 </head>
 <body>
 
-    <div id="sidebar">
-        <h2>JOURNAL HUB</h2>
-        <div class="menu-item active" onclick="changeCategory('Tout')">🏠 Tout voir</div>
-        <div class="menu-item" onclick="changeCategory('Sport')">⚽ Sport</div>
-        <div class="menu-item" onclick="changeCategory('Tech')">💻 Tech</div>
-        <div class="menu-item" onclick="changeCategory('Bourse')">📈 Bourse</div>
-        <div class="menu-item" onclick="changeCategory('Jeux Vidéo')">🎮 Jeux Vidéo</div>
-        <div class="menu-item" onclick="changeCategory('Politique')">🏛️ Politique</div>
-    </div>
-
-    <div id="main-wrapper">
-        <div id="top-bar">
-            <h1 id="current-cat" style="margin:0;">Toutes les infos</h1>
-            <input type="date" id="date-picker" onchange="renderNews()">
-        </div>
-
-        <div id="main-content">
-            <div id="editor-zone">
-                <h3 style="margin-top:0">✍️ Publier une news</h3>
-                <div class="editor-grid">
-                    <input type="text" id="news-title" placeholder="Titre de l'article...">
-                    <select id="news-category">
-                        <option value="Sport">Sport</option>
-                        <option value="Tech">Tech</option>
-                        <option value="Bourse">Bourse</option>
-                        <option value="Jeux Vidéo">Jeux Vidéo</option>
-                        <option value="Politique">Politique</option>
-                    </select>
-                    <textarea id="news-text" placeholder="Écrivez ici..." rows="3"></textarea>
-                    <button class="publish-btn" onclick="postNews()">PUBLIER</button>
-                </div>
+    <div id="main-menu">
+        <div class="menu-box">
+            <h1 style="color: #00d4ff; margin: 0;">TERRARIA ULTIMATE</h1>
+            <input type="text" id="pseudo-input" placeholder="Pseudo...">
+            <button class="btn-play" onclick="initGame()">LANCER L'AVENTURE</button>
+            <div style="text-align: left; margin-top: 15px;">
+                <small>Amis :</small>
+                <div id="friends-list" style="color: #4ade80; font-size: 11px;">Aucun ami</div>
             </div>
-            <div id="news-container"></div>
         </div>
     </div>
 
-    <button id="admin-lock" onclick="askPassword()">🔒 Accès Admin</button>
+    <div id="game-ui">
+        <div id="stats-overlay">
+            <b id="display-name">Joueur</b><br>
+            <div id="hp-bar"><div id="hp-fill"></div></div>
+            <div id="inv-txt" style="font-size: 10px;"></div>
+        </div>
 
-    <script>
-        let allNews = JSON.parse(localStorage.getItem('myJournalNews')) || [];
-        let currentCategory = 'Tout';
-        let isAdmin = false;
+        <div id="craft-menu">
+            <b style="font-size: 10px; color: #00d4ff;">FORGE & CRAFT</b>
+            <div class="recipe" onclick="craftItem('stick')">Bâton (1 Bois)</div>
+            <div class="recipe" onclick="craftItem('arrow')">x5 Flèches (1 Bât+1 Pierre)</div>
+            <div class="recipe" onclick="craftTool('Pioche', 'pierre')">P. Pierre (2B+3P)</div>
+            <div class="recipe" onclick="craftTool('Épée', 'fer')">E. Fer (1B+2F)</div>
+            <div class="recipe" onclick="craftTool('Pioche', 'palladium')">P. PALLADIUM (2B+3Pa)</div>
+        </div>
 
-        const emojiList = ["🔥", "❤️", "😂", "😮", "😢"];
+        <div id="hotbar">
+            <div class="slot active" id="slot1" onclick="selectSlot(1)">ÉPÉE</div>
+            <div class="slot" id="slot2" onclick="selectSlot(2)">PIOCHE</div>
+            <div class="slot" id="slot3" onclick="selectSlot(3)">HACHE</div>
+            <div class="slot" id="slot4" onclick="selectSlot(4)">ARC</div>
+        </div>
+    </div>
 
-        function askPassword() {
-            if (prompt("Mot de passe :") === "1234") {
-                isAdmin = true;
-                document.getElementById('editor-zone').style.display = 'block';
-                document.getElementById('admin-lock').innerText = "🔓 Admin Actif";
-                renderNews();
+    <div id="joy-container"><div id="joy-knob"></div></div>
+    <div id="jump-btn">SAUT</div>
+    <canvas id="game-canvas"></canvas>
+
+<script>
+const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d', { alpha: false });
+let world = [], entities = [], arrows = [], lastTime = 0;
+let inBackrooms = false, jumpCounter = 0;
+const TILE = 32, ROWS = 65, COLS = 120;
+
+let player = { x: 1600, y: 700, w: 20, h: 38, vx: 0, vy: 0, hp: 100, grounded: false, name: "" };
+let inv = { bois: 5, pierre: 0, fer: 0, or: 0, palladium: 0, batons: 10, fleches: 20 };
+let tools = { 
+    1: {type: 'Épée', mat: 'bois', power: 10}, 
+    2: {type: 'Pioche', mat: 'bois', power: 1},
+    3: {type: 'Hache', mat: 'bois', power: 1},
+    4: {type: 'Arc', mat: 'bois', power: 15}
+};
+let activeSlot = 1, joyX = 0, keys = { q: false, d: false };
+
+// --- GESTION PSEUDO ---
+const pInput = document.getElementById('pseudo-input');
+pInput.value = localStorage.getItem('t_pseudo') || "Player" + Math.floor(Math.random()*999);
+
+function initGame() {
+    player.name = pInput.value;
+    localStorage.setItem('t_pseudo', player.name);
+    document.getElementById('main-menu').style.display = 'none';
+    document.getElementById('game-ui').style.display = 'block';
+    canvas.style.display = 'block';
+    document.getElementById('display-name').innerText = "👤 " + player.name;
+    
+    // Génération du monde avec minerais
+    for(let y=0; y<ROWS; y++) {
+        world[y] = [];
+        for(let x=0; x<COLS; x++) {
+            let id = 0;
+            if(y === 30) id = 1; // Herbe
+            else if(y > 30 && y < 35) id = 2; // Terre
+            else if(y >= 35) {
+                id = 3; // Pierre
+                let r = Math.random();
+                if(r < 0.06) id = 5; // Fer
+                if(r < 0.02) id = 6; // Or
+                if(y > 58 && r < 0.15) id = 9; // Palladium
+            }
+            world[y][x] = id;
+        }
+    }
+    requestAnimationFrame(gameLoop);
+}
+
+// --- CRAFTING ---
+function craftItem(type) {
+    if(type === 'stick' && inv.bois >= 1) { inv.bois--; inv.batons += 4; }
+    if(type === 'arrow' && inv.batons >= 1 && inv.pierre >= 1) { inv.batons--; inv.pierre--; inv.fleches += 5; }
+    updateUI();
+}
+
+function craftTool(type, mat) {
+    const costs = { Épée: 2, Pioche: 3, Hache: 3 };
+    const sticks = (type === 'Épée') ? 1 : 2;
+    const powerMult = { bois: 1, pierre: 2, fer: 4, or: 6, palladium: 10 };
+    
+    if(inv[mat] >= costs[type] && inv.batons >= sticks) {
+        inv[mat] -= costs[type]; inv.batons -= sticks;
+        let slot = (type === 'Épée') ? 1 : (type === 'Pioche' ? 2 : 3);
+        tools[slot] = { type: type, mat: mat, power: powerMult[mat] };
+        updateUI();
+    }
+}
+
+// --- ENGINE ---
+function gameLoop(timestamp) {
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+    lastTime = timestamp;
+
+    // Physique
+    let move = joyX || (keys.d ? 1 : (keys.q ? -1 : 0));
+    player.vx = move * 350;
+    player.vy += 1500 * dt;
+    player.x += player.vx * dt;
+    player.y += player.vy * dt;
+
+    // Collisions
+    let gx = Math.floor(player.x/TILE), gy = Math.floor((player.y+player.h)/TILE);
+    if(world[gy]?.[gx] > 0) {
+        player.y = gy*TILE - player.h;
+        player.vy = 0; player.grounded = true;
+    } else player.grounded = false;
+
+    // Backrooms
+    if(!inBackrooms && gy >= ROWS-2 && jumpCounter >= 3) {
+        inBackrooms = true;
+        for(let y=0; y<ROWS; y++) for(let x=0; x<COLS; x++) world[y][x] = Math.random() > 0.9 ? 11 : 0;
+    }
+
+    draw();
+    updateUI();
+    requestAnimationFrame(gameLoop);
+}
+
+function draw() {
+    let camX = player.x - canvas.width/2;
+    let camY = player.y - canvas.height/2;
+    ctx.fillStyle = inBackrooms ? "#ceca8d" : "#87CEEB";
+    ctx.fillRect(0,0, canvas.width, canvas.height);
+
+    for(let y=0; y<ROWS; y++) {
+        for(let x=0; x<COLS; x++) {
+            if(world[y][x] > 0) {
+                const colors = {1:"#2d5a27", 2:"#5d4037", 3:"#555", 5:"#ddd", 6:"#ffd700", 9:"#ff4d00", 11:"#9e9a5e"};
+                ctx.fillStyle = colors[world[y][x]];
+                ctx.fillRect(x*TILE-camX, y*TILE-camY, TILE, TILE);
             }
         }
+    }
 
-        function postNews() {
-            const title = document.getElementById('news-title').value;
-            const cat = document.getElementById('news-category').value;
-            const text = document.getElementById('news-text').value;
-            if(title && text) {
-                const newArticle = {
-                    id: Date.now(),
-                    cat, title, text,
-                    dateKey: new Date().toISOString().split('T')[0],
-                    dateDisplay: new Date().toLocaleString(),
-                    ratings: [],
-                    reactions: { "🔥": 0, "❤️": 0, "😂": 0, "😮": 0, "😢": 0 }
-                };
-                allNews.unshift(newArticle);
-                save(); renderNews();
-                document.getElementById('news-title').value = ""; document.getElementById('news-text').value = "";
-            }
-        }
+    // Flèches
+    ctx.fillStyle = "white";
+    arrows.forEach((arr, i) => {
+        arr.x += arr.vx; arr.y += arr.vy; arr.vy += 0.2;
+        ctx.fillRect(arr.x-camX, arr.y-camY, 8, 2);
+        if(world[Math.floor(arr.y/TILE)]?.[Math.floor(arr.x/TILE)] > 0) arrows.splice(i, 1);
+    });
 
-        function addReaction(articleId, emoji) {
-            const article = allNews.find(a => a.id === articleId);
-            if(article) {
-                article.reactions[emoji]++;
-                save(); renderNews();
-            }
-        }
+    // Joueur
+    ctx.fillStyle = "#00d4ff";
+    ctx.fillRect(player.x-camX, player.y-camY, player.w, player.h);
+    ctx.fillStyle = "white"; ctx.font = "10px Arial";
+    ctx.fillText(player.name, player.x-camX, player.y-camY-5);
+}
 
-        function vote(articleId, score) {
-            const article = allNews.find(a => a.id === articleId);
-            if(article) {
-                article.ratings.push(score);
-                save(); renderNews();
-            }
-        }
+function updateUI() {
+    document.getElementById('hp-fill').style.width = player.hp + "%";
+    document.getElementById('inv-txt').innerText = `Bois:${inv.bois} Pierre:${inv.pierre} Fer:${inv.fer} Palla:${inv.palladium} Flèches:${inv.fleches}`;
+    for(let i=1; i<=4; i++) {
+        document.getElementById('slot'+i).innerHTML = `<b style="color:#00d4ff">${tools[i].type}</b><br>${tools[i].mat}`;
+    }
+}
 
-        function save() { localStorage.setItem('myJournalNews', JSON.stringify(allNews)); }
-        function deleteNews(id) { allNews = allNews.filter(a => a.id !== id); save(); renderNews(); }
-        function changeCategory(cat) { currentCategory = cat; document.getElementById('current-cat').innerText = cat; renderNews(); }
+// --- CONTROLES ---
+window.onkeydown = (e) => {
+    let k = e.key.toLowerCase();
+    if(k==='z' || k===' ') { if(player.grounded){ player.vy=-550; jumpCounter++; } }
+    if(k==='q') keys.q = true; if(k==='d') keys.d = true;
+};
+window.onkeyup = (e) => { if(e.key==='q') keys.q=false; if(e.key==='d') keys.d=false; };
 
-        function renderNews() {
-            const container = document.getElementById('news-container');
-            const selectedDate = document.getElementById('date-picker').value;
-            container.innerHTML = "";
-            
-            allNews.forEach(article => {
-                if ((currentCategory === 'Tout' || article.cat === currentCategory) && 
-                    (selectedDate === "" || article.dateKey === selectedDate)) {
-                    
-                    const sum = article.ratings.reduce((a, b) => a + b, 0);
-                    const avg = article.ratings.length ? (sum / article.ratings.length).toFixed(1) : "0";
+canvas.onmousedown = (e) => {
+    let camX = player.x - canvas.width/2, camY = player.y - canvas.height/2;
+    let mx = e.clientX + camX, my = e.clientY + camY;
+    let gx = Math.floor(mx/TILE), gy = Math.floor(my/TILE);
 
-                    container.innerHTML += `
-                        <div class="news-card">
-                            <span class="badge">${article.cat}</span>
-                            <small> • ${article.dateDisplay}</small>
-                            ${isAdmin ? `<button class="delete-btn" onclick="deleteNews(${article.id})">Supprimer</button>` : ''}
-                            <h2>${article.title}</h2>
-                            <p style="white-space: pre-wrap;">${article.text}</p>
-                            
-                            <div class="interaction-bar">
-                                <div style="display:flex; align-items:center; gap:15px;">
-                                    <div class="stars">
-                                        ${[1,2,3,4,5].map(n => `<button class="star-btn" onclick="vote(${article.id}, ${n})">★</button>`).join('')}
-                                    </div>
-                                    <span style="font-size:0.85rem; color:#666;">Note : ${avg}/5 (${article.ratings.length} avis)</span>
-                                </div>
-                                
-                                <div class="reactions">
-                                    ${emojiList.map(e => `
-                                        <button class="react-btn" onclick="addReaction(${article.id}, '${e}')">
-                                            ${e} <span>${article.reactions[e]}</span>
-                                        </button>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-            });
-        }
-        renderNews();
-    </script>
+    if(activeSlot === 2 && world[gy]?.[gx] > 0) { // Minage
+        let id = world[gy][gx];
+        if(id === 3) inv.pierre++; if(id === 5) inv.fer++; if(id === 6) inv.or++; if(id === 9) inv.palladium++;
+        world[gy][gx] = 0;
+    } else if(activeSlot === 4 && inv.fleches > 0) { // Tir
+        let ang = Math.atan2(my-player.y, mx-player.x);
+        arrows.push({x:player.x, y:player.y, vx:Math.cos(ang)*15, vy:Math.sin(ang)*15});
+        inv.fleches--;
+    }
+    updateUI();
+};
+
+function selectSlot(n) { activeSlot = n; document.querySelectorAll('.slot').forEach((s,i)=>s.classList.toggle('active', i+1===n)); }
+
+// Joystick Mobile
+const jc = document.getElementById('joy-container'), jk = document.getElementById('joy-knob');
+jc.addEventListener('touchmove', (e) => {
+    let t = e.touches[0], r = jc.getBoundingClientRect();
+    let dx = Math.max(-40, Math.min(40, t.clientX - (r.left+50)));
+    jk.style.transform = `translateX(${dx}px)`; joyX = dx/40;
+});
+jc.addEventListener('touchend', () => { jk.style.transform=`translateX(0px)`; joyX=0; });
+document.getElementById('jump-btn').addEventListener('touchstart', () => { if(player.grounded) player.vy=-550; });
+
+canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+</script>
 </body>
 </html>
