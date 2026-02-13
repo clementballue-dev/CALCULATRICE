@@ -2,241 +2,152 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>2DCraft Palladium - Master Graphic</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Backrooms 2D - HTML5</title>
     <style>
-        :root { --palla: #ff8c00; --danger: #ff3333; --ui-dark: rgba(10, 10, 20, 0.9); }
-        body { margin: 0; background: #020205; overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; color: white; touch-action: none; }
-        canvas { display: block; image-rendering: pixelated; width: 100vw; height: 100vh; }
-
-        /* INTERFACE HAUTE - STYLE IMAGE */
-        #top-hud { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; }
-        #heart-row { display: flex; gap: 5px; filter: drop-shadow(0 0 8px red); }
-        .heart { width: 20px; height: 20px; background: var(--danger); clip-path: polygon(50% 15%, 80% 0%, 100% 20%, 100% 50%, 50% 100%, 0% 50%, 0% 20%, 20% 0%); }
-        
-        #boss-tag { font-size: 16px; font-weight: 900; color: var(--danger); letter-spacing: 4px; margin-top: 12px; display: none; text-shadow: 0 0 15px red; }
-        #boss-health-bar { width: 280px; height: 10px; background: rgba(0,0,0,0.8); border: 1px solid #333; display: none; margin-top: 6px; border-radius: 5px; overflow: hidden; }
-        #boss-health-fill { height: 100%; background: linear-gradient(90deg, #600, #f00); width: 100%; transition: width 0.3s; }
-
-        /* INVENTAIRE DROITE - EXACTEMENT COMME L'IMAGE */
-        #side-inv { position: absolute; top: 50%; right: 25px; transform: translateY(-50%); width: 280px; background: var(--ui-dark); border: 2px solid #333; border-radius: 15px; padding: 25px; display: none; pointer-events: auto; backdrop-filter: blur(10px); box-shadow: -20px 0 50px rgba(0,0,0,0.8); }
-        .stat-box { font-size: 13px; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
-        .armor-item { background: #1a1a2a; border: 1px solid #444; padding: 15px; margin: 10px 0; border-radius: 10px; display: flex; align-items: center; gap: 15px; font-size: 12px; }
-        .palla-glow { color: var(--palla); font-weight: bold; text-shadow: 0 0 10px var(--palla); }
-
-        /* HOTBAR */
-        #hotbar { position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; pointer-events: auto; }
-        .slot { width: 60px; height: 60px; background: rgba(15,15,25,0.95); border: 2px solid #2a2a3a; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #555; position: relative; }
-        .slot.active { border-color: var(--palla); box-shadow: 0 0 25px var(--palla); background: rgba(255,140,0,0.1); color: white; }
-        .count { position: absolute; bottom: 5px; right: 5px; font-size: 10px; color: var(--palla); }
-
-        /* BOUTONS MOBILES */
-        #jump-ctrl { position: absolute; bottom: 45px; right: 45px; width: 95px; height: 95px; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; pointer-events: auto; font-size: 14px; }
-        #joystick-area { position: absolute; bottom: 45px; left: 45px; width: 120px; height: 120px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; pointer-events: auto; }
-
-        /* CHARGEMENT MINAGE */
-        #mine-ui { position: absolute; width: 60px; height: 60px; pointer-events: none; display: none; }
-        #mine-ring { width: 100%; height: 100%; border: 4px solid rgba(255,255,255,0.1); border-radius: 50%; }
-        #mine-fill { position: absolute; top:0; left:0; width: 100%; height: 100%; border: 4px solid var(--palla); border-radius: 50%; clip-path: inset(100% 0 0 0); }
+        body { margin: 0; overflow: hidden; background: #000; }
+        canvas { display: block; background: #222; }
     </style>
 </head>
 <body>
 
-<div id="top-hud">
-    <div id="heart-row"></div>
-    <div id="boss-tag">LE NEIGHBOR</div>
-    <div id="boss-health-bar"><div id="boss-health-fill"></div></div>
-</div>
-
-<div id="side-inv">
-    <div class="stat-box">Statut : <span id="def-val">0</span> (Défense Totale)</div>
-    <div class="armor-item">🛡️ Casque <span class="palla-glow">PALLADIUM</span></div>
-    <div class="armor-item">🛡️ Plastron <span class="palla-glow">PALLADIUM</span></div>
-    <div class="armor-item">🛡️ Bottes <span class="palla-glow">PALLADIUM</span></div>
-    <button onclick="craftArmor()" id="craft-btn" style="width:100%; padding:15px; background:var(--palla); border:none; color:white; font-weight:bold; border-radius:10px; cursor:pointer; margin-top:15px; box-shadow: 0 5px 15px rgba(255,140,0,0.3);">FORGER L'ARMURE (5 PALLA)</button>
-    <button onclick="toggleInv()" style="width:100%; margin-top:12px; background:transparent; color:#444; border:none; cursor:pointer; font-size:12px;">Retour au jeu</button>
-</div>
-
-<div id="hotbar">
-    <div class="slot active" id="s1">MAIN</div>
-    <div class="slot" id="s2">PIOCHE<div class="count" id="c-pick">0</div></div>
-    <div class="slot" id="s3">ÉPÉE</div>
-    <div class="slot" id="s4">PALLA<div class="count" id="c-palla">0</div></div>
-</div>
-
-<div id="joystick-area"></div>
-<div id="jump-ctrl" onclick="pJump()">SAUT</div>
-<button onclick="toggleInv()" style="position:absolute; top:25px; right:25px; pointer-events:auto; background:var(--ui-dark); border:1px solid #333; color:white; width:50px; height:50px; border-radius:12px; cursor:pointer; font-size:20px;">☰</button>
-
-<div id="mine-ui"><div id="mine-ring"></div><div id="mine-fill"></div></div>
-<canvas id="cvs"></canvas>
+<canvas id="jeu"></canvas>
 
 <script>
-const cvs = document.getElementById('cvs'), ctx = cvs.getContext('2d');
-let world = [], items = [], otherPlayers = [], lastT = 0, mining = null;
-let p = { x: 2000, y: 1000, w: 26, h: 46, vx: 0, vy: 0, hp: 10, maxHp: 10, grounded: false, armorEquipped: false };
-let inv = { palla: 0, bois: 0, pickLvl: 0 };
-let boss = null, gameTime = 0, keys = {};
+const canvas = document.getElementById('jeu');
+const ctx = canvas.getContext('2d');
 
-const TILE = 32, ROWS = 64, COLS = 128;
-const COLORS = { 1:"#1a472a", 2:"#4e342e", 3:"#2c2c2e", 5:"#71717a", 9:"#ff8c00", 10:"#3e2723", 12:"#050505" };
+// --- CONFIGURATION ---
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-function init() {
-    cvs.width = window.innerWidth; cvs.height = window.innerHeight;
-    const hBox = document.getElementById('heart-row');
-    for(let i=0; i<p.maxHp; i++) hBox.innerHTML += '<div class="heart"></div>';
+const T = 64; // Taille d'une tuile (64x64 pixels)
+const TAILLE_ROOM = 8; // Chaque "pièce" fait 8x8 tuiles
+let joueur = { x: 100, y: 100, v: 4 };
+let monstre = { x: -100, y: -100, v: 2.5 };
+let touches = {};
+let monde = {}; // Stocke les pièces générées
+
+// --- GENERATION DU LABYRINTHE ---
+function obtenirPiece(cx, cy) {
+    const cle = `${cx},${cy}`;
+    if (!monde[cle]) {
+        let grille = [];
+        for (let y = 0; y < TAILLE_ROOM; y++) {
+            grille[y] = [];
+            for (let x = 0; x < TAILLE_ROOM; x++) {
+                // Créer des murs sur les bords ou au hasard (20% de chance)
+                let estMur = (x === 0 || x === TAILLE_ROOM-1 || y === 0 || y === TAILLE_ROOM-1) 
+                             ? (Math.random() > 0.3) : (Math.random() < 0.15);
+                grille[y][x] = estMur ? 1 : 0;
+            }
+        }
+        // Toujours laisser des ouvertures pour circuler
+        grille[0][Math.floor(TAILLE_ROOM/2)] = 0;
+        grille[TAILLE_ROOM-1][Math.floor(TAILLE_ROOM/2)] = 0;
+        monde[cle] = grille;
+    }
+    return monde[cle];
+}
+
+// --- LOGIQUE DE COLLISION ---
+function peutMarcher(nx, ny) {
+    let cx = Math.floor(nx / (T * TAILLE_ROOM));
+    let cy = Math.floor(ny / (T * TAILLE_ROOM));
+    let tx = Math.floor((nx % (T * TAILLE_ROOM) + (T * TAILLE_ROOM)) % (T * TAILLE_ROOM) / T);
+    let ty = Math.floor((ny % (T * TAILLE_ROOM) + (T * TAILLE_ROOM)) % (T * TAILLE_ROOM) / T);
     
-    for(let y=0; y<ROWS; y++) {
-        world[y] = [];
-        for(let x=0; x<COLS; x++) {
-            let id = 0;
-            if(y === 40) id = 1; // Surface
-            else if(y > 40 && y < 63) {
-                id = 2; // Terre
-                if(y > 44) id = 3; // Pierre
-                if(y > 54 && Math.random() < 0.04) id = 9; // Palladium
-            }
-            else if(y === 63) id = 12; // Bedrock
-            if(y === 39 && x % 10 === 0) id = 10; // Tronc
-            world[y][x] = id;
-        }
-    }
-    // Simulation Crossplay
-    otherPlayers.push({x: 2300, y: 1000, name: "iOS_User", col: "#007aff"});
-    requestAnimationFrame(loop);
+    let piece = obtenirPiece(cx, cy);
+    return piece[ty][tx] === 0;
 }
 
-function loop(t) {
-    let dt = (t - lastT) / 1000; lastT = t; if(dt > 0.1) dt = 0.016;
-    gameTime += dt;
+// --- BOUCLE DE JEU ---
+function update() {
+    let dx = 0, dy = 0;
+    if (touches['ArrowUp'] || touches['z']) dy = -joueur.v;
+    if (touches['ArrowDown'] || touches['s']) dy = joueur.v;
+    if (touches['ArrowLeft'] || touches['q']) dx = -joueur.v;
+    if (touches['ArrowRight'] || touches['d']) dx = joueur.v;
 
-    // Physiques & Touches
-    let mv = (keys['d']?1:0) - (keys['q']?1:0);
-    p.vx = mv * 260; p.vy += 1600 * dt;
-    p.x += p.vx * dt; p.y += p.vy * dt;
+    // Collision Mur
+    if (peutMarcher(joueur.x + dx, joueur.y)) joueur.x += dx;
+    if (peutMarcher(joueur.x, joueur.y + dy)) joueur.y += dy;
 
-    let gx = Math.floor(p.x/TILE), gy = Math.floor((p.y+p.h)/TILE);
-    if(world[gy]?.[gx] > 0) { p.y = gy*TILE-p.h; p.vy = 0; p.grounded = true; } else p.grounded = false;
-
-    // Boss IA (Le Neighbor Noir)
-    if(boss) {
-        boss.x += (p.x > boss.x ? 1 : -1) * 150 * dt;
-        if(Math.hypot(p.x-boss.x, p.y-boss.y) < 50) {
-            p.hp -= 2 * dt; 
-            if(p.hp <= 0) location.reload();
-        }
-        document.getElementById('boss-health-fill').style.width = (boss.hp/500)*100 + "%";
+    // IA Monstre (Le monstre te suit toujours)
+    let dist = Math.hypot(joueur.x - monstre.x, joueur.y - monstre.y);
+    if (dist > 5) {
+        monstre.x += (joueur.x - monstre.x) / dist * monstre.v;
+        monstre.y += (joueur.y - monstre.y) / dist * monstre.v;
     }
 
-    // Minage 1.5s
-    if(mining) {
-        mining.t += dt;
-        let ui = document.getElementById('mine-ui');
-        ui.style.display = 'block'; ui.style.left = (mining.mx-30)+'px'; ui.style.top = (mining.my-30)+'px';
-        document.getElementById('mine-fill').style.clipPath = `inset(${100 - (mining.t/1.5)*100}% 0 0 0)`;
-        if(mining.t >= 1.5) {
-            let id = world[mining.gy][mining.gx];
-            items.push({x: mining.gx*TILE+10, y: mining.gy*TILE+10, id: id});
-            world[mining.gy][mining.gx] = 0; mining = null; ui.style.display = 'none';
-        }
+    if (dist < 30) {
+        alert("L'ENTITÉ VOUS A EU...");
+        joueur.x = 100; joueur.y = 100; // Reset
     }
 
-    // Ramassage Loot
-    items.forEach((it, i) => {
-        if(Math.hypot(p.x-it.x, p.y-it.y) < 30) {
-            if(it.id === 9) inv.palla++;
-            if(it.id === 10) { inv.bois++; if(inv.pickLvl === 0) inv.pickLvl = 1; }
-            items.splice(i, 1);
-            updateHUD();
-        }
-    });
-
-    draw(); requestAnimationFrame(loop);
+    draw();
+    requestAnimationFrame(update);
 }
 
+// --- DESSIN ---
 function draw() {
-    let cx = p.x - cvs.width/2, cy = p.y - cvs.height/2;
-    ctx.fillStyle = "#030308"; ctx.fillRect(0,0,cvs.width,cvs.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    let offsetX = canvas.width / 2 - joueur.x;
+    let offsetY = canvas.height / 2 - joueur.y;
 
-    // Monde (Avec effets de lueur)
-    for(let y=0; y<ROWS; y++) for(let x=Math.floor(cx/TILE); x<Math.floor((cx+cvs.width)/TILE)+1; x++) {
-        let id = world[y]?.[x]; if(id > 0) {
-            ctx.fillStyle = COLORS[id];
-            ctx.fillRect(x*TILE-cx, y*TILE-cy, TILE, TILE);
-            if(id === 9) { // Palladium Glow
-                ctx.shadowBlur = 15; ctx.shadowColor = "orange";
-                ctx.strokeStyle = "rgba(255,140,0,0.5)";
-                ctx.strokeRect(x*TILE-cx, y*TILE-cy, TILE, TILE);
-                ctx.shadowBlur = 0;
+    // Dessiner le monde (3x3 pièces visibles autour du joueur)
+    let pcx = Math.floor(joueur.x / (T * TAILLE_ROOM));
+    let pcy = Math.floor(joueur.y / (T * TAILLE_ROOM));
+
+    for (let cx = pcx - 1; cx <= pcx + 1; cx++) {
+        for (let cy = pcy - 1; cy <= pcy + 1; cy++) {
+            let p = obtenirPiece(cx, cy);
+            for (let y = 0; y < TAILLE_ROOM; y++) {
+                for (let x = 0; x < TAILLE_ROOM; x++) {
+                    let posX = (cx * TAILLE_ROOM + x) * T + offsetX;
+                    let posY = (cy * TAILLE_ROOM + y) * T + offsetY;
+                    
+                    if (p[y][x] === 1) {
+                        ctx.fillStyle = "#b4a050"; // Mur Jaune Backroom
+                        ctx.fillRect(posX, posY, T, T);
+                        ctx.strokeStyle = "#8a7a30";
+                        ctx.strokeRect(posX, posY, T, T);
+                    } else {
+                        ctx.fillStyle = "#dcd296"; // Sol Tapis
+                        ctx.fillRect(posX, posY, T, T);
+                    }
+                }
             }
         }
     }
 
-    // Le Neighbor (Graphismes Noirs Yeux Rouges)
-    if(boss) {
-        ctx.fillStyle = "#000"; ctx.shadowBlur = 35; ctx.shadowColor = "red";
-        ctx.fillRect(boss.x-cx-35, boss.y-cy-80, 70, 130);
-        ctx.fillStyle = "red"; 
-        ctx.fillRect(boss.x-cx-15, boss.y-cy-60, 12, 12); ctx.fillRect(boss.x-cx+10, boss.y-cy-60, 12, 12);
-        ctx.shadowBlur = 0;
-    }
+    // Monstre (L'entité noire)
+    ctx.fillStyle = "black";
+    ctx.beginPath();
+    ctx.ellipse(monstre.x + offsetX, monstre.y + offsetY, 20, 30, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Autres Joueurs
-    otherPlayers.forEach(op => {
-        ctx.fillStyle = op.col; ctx.fillRect(op.x-cx, op.y-cy, 26, 46);
-        ctx.fillStyle = "white"; ctx.font = "10px Arial"; ctx.fillText(op.name, op.x-cx, op.y-cy-10);
-    });
+    // Joueur
+    ctx.fillStyle = "blue";
+    ctx.fillRect(canvas.width / 2 - 15, canvas.height / 2 - 15, 30, 30);
 
-    // Le Joueur (Aura si armure)
-    if(p.armorEquipped) { ctx.shadowBlur = 30; ctx.shadowColor = "orange"; }
-    ctx.fillStyle = "#ffdbac"; ctx.fillRect(p.x-cx+4, p.y-cy, 18, 18);
-    ctx.fillStyle = p.armorEquipped ? "orange" : "#3498db"; 
-    ctx.fillRect(p.x-cx, p.y-cy+18, 26, 22);
-    ctx.fillStyle = "#111"; ctx.fillRect(p.x-cx+2, p.y-cy+40, 22, 6);
-    ctx.shadowBlur = 0;
+    // EFFET LAMPE DE POCHE
+    let gradient = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, 50, 
+        canvas.width / 2, canvas.height / 2, 300
+    );
+    gradient.addColorStop(0, 'rgba(0,0,0,0)');
+    gradient.addColorStop(1, 'rgba(0,0,0,0.95)');
+    
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-function updateHUD() {
-    document.getElementById('c-palla').innerText = inv.palla;
-    document.getElementById('c-pick').innerText = inv.pickLvl;
-    const hearts = document.querySelectorAll('.heart');
-    hearts.forEach((h, i) => h.style.opacity = i < Math.floor(p.hp) ? "1" : "0.1");
-}
+// Contrôles
+window.addEventListener('keydown', e => touches[e.key] = true);
+window.addEventListener('keyup', e => touches[e.key] = false);
 
-function craftArmor() {
-    if(inv.palla >= 5) {
-        inv.palla -= 5; p.armorEquipped = true;
-        document.getElementById('def-val').innerText = "80";
-        boss = { x: p.x + 500, y: p.y, hp: 500 }; // Le Neighbor apparaît quand tu as l'armure
-        document.getElementById('boss-tag').style.display = 'block';
-        document.getElementById('boss-health-bar').style.display = 'block';
-        updateHUD();
-    } else {
-        alert("Il te faut 5 Palladium !");
-    }
-}
-
-function toggleInv() { let el = document.getElementById('side-inv'); el.style.display = el.style.display === 'block' ? 'none' : 'block'; }
-function pJump() { if(p.grounded) p.vy = -530; }
-
-cvs.onmousedown = e => {
-    let cx = p.x-cvs.width/2, cy = p.y-cvs.height/2;
-    let gx = Math.floor((e.clientX+cx)/TILE), gy = Math.floor((e.clientY+cy)/TILE);
-    if(world[gy]?.[gx] > 0 && world[gy][gx] !== 12) {
-        let id = world[gy][gx];
-        let canMine = false;
-        if(id === 1 || id === 2 || id === 10) canMine = true; // Main
-        if(id === 3 && inv.pickLvl >= 1) canMine = true; // Pierre avec pioche bois (auto-craftée)
-        if(id === 9 && inv.pickLvl >= 1) canMine = true; // Palladium
-        
-        if(canMine) mining = {gx, gy, t:0, mx: e.clientX, my: e.clientY};
-    }
-};
-cvs.onmouseup = () => { mining = null; document.getElementById('mine-ui').style.display = 'none'; };
-window.onkeydown = e => { keys[e.key.toLowerCase()] = true; if(e.key === ' ') pJump(); };
-window.onkeyup = e => keys[e.key.toLowerCase()] = false;
-
-init();
+update();
 </script>
 </body>
 </html>
