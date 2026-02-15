@@ -1,153 +1,138 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>Backrooms 2D - HTML5</title>
-    <style>
-        body { margin: 0; overflow: hidden; background: #000; }
-        canvas { display: block; background: #222; }
-    </style>
+<meta charset="UTF-8">
+<title>Glitch Friends</title>
+
+<style>
+body {
+    background: #111;
+    color: #0f0;
+    font-family: monospace;
+    text-align: center;
+}
+#game {
+    width: 600px;
+    margin: auto;
+    border: 2px solid #0f0;
+    padding: 10px;
+    background: #000;
+}
+button {
+    background: #0f0;
+    color: #000;
+    border: none;
+    padding: 10px;
+    margin: 5px;
+    cursor: pointer;
+}
+button:hover {
+    background: #8f8;
+}
+.enemy {
+    color: red;
+}
+.dead {
+    color: gray;
+}
+</style>
 </head>
+
 <body>
 
-<canvas id="jeu"></canvas>
+<h1>👾 GLITCH FRIENDS 👾</h1>
+
+<div id="game">
+    <div id="log"></div>
+    <div id="buttons"></div>
+</div>
 
 <script>
-const canvas = document.getElementById('jeu');
-const ctx = canvas.getContext('2d');
+// ------------------ PERSONNAGES ------------------
+let team = [
+    { name: "Bunny.exe", hp: 100, maxHp: 100, atk: 15 },
+    { name: "Bear Toy", hp: 150, maxHp: 150, atk: 8 },
+    { name: "FoxByte", hp: 80, maxHp: 80, atk: 20 },
+    { name: "Cat Loop", hp: 90, maxHp: 90, atk: 6 }
+];
 
-// --- CONFIGURATION ---
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+let enemy = { name: "Bug Corrompu", hp: 200, atk: 10 };
 
-const T = 64; // Taille d'une tuile (64x64 pixels)
-const TAILLE_ROOM = 8; // Chaque "pièce" fait 8x8 tuiles
-let joueur = { x: 100, y: 100, v: 4 };
-let monstre = { x: -100, y: -100, v: 2.5 };
-let touches = {};
-let monde = {}; // Stocke les pièces générées
+// ------------------ INTERFACE ------------------
+const log = document.getElementById("log");
+const buttons = document.getElementById("buttons");
 
-// --- GENERATION DU LABYRINTHE ---
-function obtenirPiece(cx, cy) {
-    const cle = `${cx},${cy}`;
-    if (!monde[cle]) {
-        let grille = [];
-        for (let y = 0; y < TAILLE_ROOM; y++) {
-            grille[y] = [];
-            for (let x = 0; x < TAILLE_ROOM; x++) {
-                // Créer des murs sur les bords ou au hasard (20% de chance)
-                let estMur = (x === 0 || x === TAILLE_ROOM-1 || y === 0 || y === TAILLE_ROOM-1) 
-                             ? (Math.random() > 0.3) : (Math.random() < 0.15);
-                grille[y][x] = estMur ? 1 : 0;
-            }
+function write(text) {
+    log.innerHTML += text + "<br>";
+    log.scrollTop = log.scrollHeight;
+}
+
+// ------------------ JEU ------------------
+function startGame() {
+    write("⚠️ Le monde se corrompt...");
+    write("👾 Un " + enemy.name + " apparaît !");
+    playerTurn();
+}
+
+function playerTurn() {
+    buttons.innerHTML = "<h3>Choisis un personnage :</h3>";
+    team.forEach((c, i) => {
+        if (c.hp > 0) {
+            let btn = document.createElement("button");
+            btn.textContent = c.name + " (" + c.hp + " HP)";
+            btn.onclick = () => attackEnemy(i);
+            buttons.appendChild(btn);
         }
-        // Toujours laisser des ouvertures pour circuler
-        grille[0][Math.floor(TAILLE_ROOM/2)] = 0;
-        grille[TAILLE_ROOM-1][Math.floor(TAILLE_ROOM/2)] = 0;
-        monde[cle] = grille;
-    }
-    return monde[cle];
+    });
 }
 
-// --- LOGIQUE DE COLLISION ---
-function peutMarcher(nx, ny) {
-    let cx = Math.floor(nx / (T * TAILLE_ROOM));
-    let cy = Math.floor(ny / (T * TAILLE_ROOM));
-    let tx = Math.floor((nx % (T * TAILLE_ROOM) + (T * TAILLE_ROOM)) % (T * TAILLE_ROOM) / T);
-    let ty = Math.floor((ny % (T * TAILLE_ROOM) + (T * TAILLE_ROOM)) % (T * TAILLE_ROOM) / T);
+function attackEnemy(index) {
+    let c = team[index];
+    let dmg = c.atk + Math.floor(Math.random() * 5);
+    enemy.hp -= dmg;
+    write("💥 " + c.name + " attaque et inflige " + dmg + " dégâts !");
     
-    let piece = obtenirPiece(cx, cy);
-    return piece[ty][tx] === 0;
-}
-
-// --- BOUCLE DE JEU ---
-function update() {
-    let dx = 0, dy = 0;
-    if (touches['ArrowUp'] || touches['z']) dy = -joueur.v;
-    if (touches['ArrowDown'] || touches['s']) dy = joueur.v;
-    if (touches['ArrowLeft'] || touches['q']) dx = -joueur.v;
-    if (touches['ArrowRight'] || touches['d']) dx = joueur.v;
-
-    // Collision Mur
-    if (peutMarcher(joueur.x + dx, joueur.y)) joueur.x += dx;
-    if (peutMarcher(joueur.x, joueur.y + dy)) joueur.y += dy;
-
-    // IA Monstre (Le monstre te suit toujours)
-    let dist = Math.hypot(joueur.x - monstre.x, joueur.y - monstre.y);
-    if (dist > 5) {
-        monstre.x += (joueur.x - monstre.x) / dist * monstre.v;
-        monstre.y += (joueur.y - monstre.y) / dist * monstre.v;
+    if (enemy.hp <= 0) {
+        write("🎉 VICTOIRE ! Le bug est corrigé.");
+        buttons.innerHTML = "";
+        return;
     }
 
-    if (dist < 30) {
-        alert("L'ENTITÉ VOUS A EU...");
-        joueur.x = 100; joueur.y = 100; // Reset
-    }
-
-    draw();
-    requestAnimationFrame(update);
+    enemyTurn();
 }
 
-// --- DESSIN ---
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    let offsetX = canvas.width / 2 - joueur.x;
-    let offsetY = canvas.height / 2 - joueur.y;
+function enemyTurn() {
+    let alive = team.filter(c => c.hp > 0);
+    let target = alive[Math.floor(Math.random() * alive.length)];
+    let dmg = enemy.atk + Math.floor(Math.random() * 5);
+    target.hp -= dmg;
 
-    // Dessiner le monde (3x3 pièces visibles autour du joueur)
-    let pcx = Math.floor(joueur.x / (T * TAILLE_ROOM));
-    let pcy = Math.floor(joueur.y / (T * TAILLE_ROOM));
+    write("👾 " + enemy.name + " attaque " + target.name + " (" + dmg + " dégâts)");
 
-    for (let cx = pcx - 1; cx <= pcx + 1; cx++) {
-        for (let cy = pcy - 1; cy <= pcy + 1; cy++) {
-            let p = obtenirPiece(cx, cy);
-            for (let y = 0; y < TAILLE_ROOM; y++) {
-                for (let x = 0; x < TAILLE_ROOM; x++) {
-                    let posX = (cx * TAILLE_ROOM + x) * T + offsetX;
-                    let posY = (cy * TAILLE_ROOM + y) * T + offsetY;
-                    
-                    if (p[y][x] === 1) {
-                        ctx.fillStyle = "#b4a050"; // Mur Jaune Backroom
-                        ctx.fillRect(posX, posY, T, T);
-                        ctx.strokeStyle = "#8a7a30";
-                        ctx.strokeRect(posX, posY, T, T);
-                    } else {
-                        ctx.fillStyle = "#dcd296"; // Sol Tapis
-                        ctx.fillRect(posX, posY, T, T);
-                    }
-                }
-            }
-        }
+    if (target.hp <= 0) {
+        write("☠️ " + target.name + " est KO !");
     }
 
-    // Monstre (L'entité noire)
-    ctx.fillStyle = "black";
-    ctx.beginPath();
-    ctx.ellipse(monstre.x + offsetX, monstre.y + offsetY, 20, 30, 0, 0, Math.PI * 2);
-    ctx.fill();
+    if (team.every(c => c.hp <= 0)) {
+        write("💀 GAME OVER");
+        buttons.innerHTML = "";
+        return;
+    }
 
-    // Joueur
-    ctx.fillStyle = "blue";
-    ctx.fillRect(canvas.width / 2 - 15, canvas.height / 2 - 15, 30, 30);
-
-    // EFFET LAMPE DE POCHE
-    let gradient = ctx.createRadialGradient(
-        canvas.width / 2, canvas.height / 2, 50, 
-        canvas.width / 2, canvas.height / 2, 300
-    );
-    gradient.addColorStop(0, 'rgba(0,0,0,0)');
-    gradient.addColorStop(1, 'rgba(0,0,0,0.95)');
-    
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    playerTurn();
 }
 
-// Contrôles
-window.addEventListener('keydown', e => touches[e.key] = true);
-window.addEventListener('keyup', e => touches[e.key] = false);
+// ------------------ GLITCH FUN ------------------
+setInterval(() => {
+    if (Math.random() < 0.1) {
+        document.body.style.background =
+            Math.random() < 0.5 ? "#111" : "#200";
+    }
+}, 500);
 
-update();
+// ------------------ LANCEMENT ------------------
+startGame();
 </script>
+
 </body>
 </html>
